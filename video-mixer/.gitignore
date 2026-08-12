@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+app/storage/
+app/storage_config.json
+client-data/*
+!client-data/.gitkeep

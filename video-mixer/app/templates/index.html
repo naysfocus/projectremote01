@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Video Mixer</title>
+<link href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B0D11'/%3E%3Crect x='6' y='6' width='9' height='9' rx='2' fill='%23F5B82E'/%3E%3Crect x='17' y='6' width='9' height='9' rx='2' fill='%233A4356'/%3E%3Crect x='6' y='17' width='9' height='9' rx='2' fill='%233A4356'/%3E%3Crect x='17' y='17' width='9' height='9' rx='2' fill='%23F5B82E'/%3E%3C/svg%3E" rel="icon"/>
+<link href="/static/style.css?v=1.22.1" rel="stylesheet"/>
+</head>
+<body>
+<header class="topbar">
+<div class="topbar-inner">
+<div class="brand">
+<svg aria-hidden="true" class="brand-mark" viewbox="0 0 32 32">
+<rect class="mk mk-on" height="11" rx="2.5" width="11" x="4" y="4"></rect>
+<rect class="mk" height="11" rx="2.5" width="11" x="17" y="4"></rect>
+<rect class="mk" height="11" rx="2.5" width="11" x="4" y="17"></rect>
+<rect class="mk mk-on" height="11" rx="2.5" width="11" x="17" y="17"></rect>
+</svg>
+<div class="brand-text">
+<span class="brand-name">Video Mixer</span>
+<span class="brand-tag">v1.22.1</span>
+</div>
+</div>
+<div class="topbar-status"><details class="topbar-storage-menu" id="storageSettingsMenu">
+<summary class="topbar-storage-trigger" title="Buka Storage &amp; pemeliharaan">
+<svg aria-hidden="true" class="topbar-storage-icon" viewbox="0 0 24 24">
+<ellipse cx="12" cy="5" rx="7" ry="3"></ellipse>
+<path d="M5 5v6c0 1.66 3.13 3 7 3s7-1.34 7-3V5"></path>
+<path d="M5 11v6c0 1.66 3.13 3 7 3s7-1.34 7-3v-6"></path>
+</svg>
+<span>Storage</span>
+</summary>
+<div class="topbar-storage-popover">
+<div class="topbar-storage-popover-head">
+<div>
+<strong>Storage &amp; pemeliharaan</strong>
+<small class="mono" id="storageSummaryPath">Lokasi default aplikasi</small>
+</div>
+<span class="topbar-storage-popover-tag mono">LOKAL</span>
+</div>
+<section class="storage-panel topbar-storage-panel" id="sec0">
+
+<div class="row">
+<label class="field grow">
+<span>Folder penyimpanan (path absolut)</span>
+<input class="mono" id="storagePath" placeholder="mis. /app/storage" readonly="" type="text"/>
+</label>
+</div>
+<div class="row">
+<button class="btn" id="btnBrowseStorage">Cari folder…</button>
+<button class="btn primary" id="btnApplyStorage">Terapkan</button>
+<button class="btn ghost" id="btnResetStorage">Reset ke default</button>
+</div>
+<div class="subhead">Penggunaan storage</div>
+<div class="storage-usage" id="storageUsage">
+<div class="usage-card">
+<div class="usage-title">Uploads</div>
+<div class="usage-value mono" id="usageUploadsSize">—</div>
+<div class="usage-detail"><span class="mono" id="usageUploadsCount">0</span> file</div>
+</div>
+<div class="usage-card">
+<div class="usage-title">Outputs</div>
+<div class="usage-value mono" id="usageOutputsSize">—</div>
+<div class="usage-detail"><span class="mono" id="usageOutputsCount">0</span> file</div>
+</div>
+<div class="usage-card">
+<div class="usage-title">Temp</div>
+<div class="usage-value mono" id="usageTempSize">—</div>
+<div class="usage-detail"><span class="mono" id="usageTempCount">0</span> file</div>
+</div>
+<div class="usage-card">
+<div class="usage-title">Audio</div>
+<div class="usage-value mono" id="usageAudioSize">—</div>
+<div class="usage-detail"><span class="mono" id="usageAudioCount">0</span> file</div>
+</div>
+</div>
+<div class="usage-actions">
+<button class="btn sm" id="btnRefreshUsage">↻ Muat ulang</button>
+<button class="btn sm danger" id="btnCleanUploads">Bersihkan uploads</button>
+<button class="btn sm danger" id="btnCleanOutputs">Bersihkan outputs</button>
+<button class="btn sm danger" id="btnCleanAudio">Bersihkan audio</button>
+<button class="btn sm danger" id="btnCleanAll">Bersihkan semua</button>
+</div>
+</section></div>
+</details>
+<span class="sys-chip" id="sysChip" title="Encoder aktif terdeteksi server">memeriksa sistem…</span>
+</div>
+</div>
+</header>
+<main class="wrap">
+<section class="workspace-heading">
+<div>
+<h1>Video Mixer</h1>
+</div>
+<div class="workspace-note">
+<span class="workspace-note-dot"></span>
+<span>Dua tahap · workspace penuh layar · grid optimal sampai 10 × 10</span>
+</div>
+</section>
+<nav aria-label="Tahapan kerja" class="workflow-tabs"><button aria-selected="true" class="workflow-tab active" data-tab-target="setup" type="button"><span class="workflow-tab-index mono">01</span><span class="workflow-tab-copy"><strong>Setup</strong><small>Matriks &amp; upload video</small></span><span class="workflow-tab-state">Aktif</span></button><button aria-selected="false" class="workflow-tab" data-tab-target="render" disabled="" type="button"><span class="workflow-tab-index mono">02</span><span class="workflow-tab-copy"><strong>Render</strong><small>Mode, kualitas &amp; proses</small></span><span class="workflow-tab-state">Terkunci</span></button></nav>
+<div class="workspace-stage">
+<div class="workspace-panel active" data-tab-panel="setup"><div class="setup-top"><section class="panel matrix-config-panel" id="sec1">
+<header class="panel-head"><div class="panel-kicker"><span class="panel-step mono">01</span><span>Setup matriks</span></div>
+</header>
+<div class="setup-config-layout">
+<div class="setup-axis-controls">
+<label class="field">
+<span>Track — jumlah baris</span>
+<select id="vSelect">
+<option value="">Pilih</option>
+</select>
+</label>
+<label class="field">
+<span>Clip — jumlah kolom</span>
+<select id="hSelect">
+<option value="">Pilih</option>
+</select>
+</label>
+</div>
+<section class="setup-output-estimates">
+<div class="setup-estimate-head">
+<div>
+<span class="setup-estimate-eyebrow mono">ESTIMASI OTOMATIS</span>
+</div>
+<span class="setup-estimate-grid-label mono" id="setupEstimateGridLabel">Pilih grid</span>
+</div>
+<div class="setup-estimate-grid">
+<article class="setup-estimate-card" data-setup-estimate-card="horizontal">
+<div class="setup-estimate-card-head"><span>Acak per Track</span><span class="setup-mode-validity" data-setup-validity="horizontal">Menunggu grid</span></div>
+<strong class="mono" id="setupMaxHorizontal">—</strong>
+<small>video maksimum</small>
+</article>
+<article class="setup-estimate-card" data-setup-estimate-card="mixHorizontal">
+<div class="setup-estimate-card-head"><span>Acak Lintas Track</span><span class="setup-mode-validity" data-setup-validity="mixHorizontal">Menunggu grid</span></div>
+<strong class="mono" id="setupMaxMixHorizontal">—</strong>
+<small>video maksimum</small>
+</article>
+<article class="setup-estimate-card" data-setup-estimate-card="mixHorizontalLinear">
+<div class="setup-estimate-card-head"><span>Urutan Clip</span><span class="setup-mode-validity" data-setup-validity="mixHorizontalLinear">Menunggu grid</span></div>
+<strong class="mono" id="setupMaxMixHorizontalLinear">—</strong>
+<small>video maksimum</small>
+</article>
+<article class="setup-estimate-card" data-setup-estimate-card="mixHorizontalLinearUnique">
+<div class="setup-estimate-card-head"><span>Urutan Clip — Track Unik</span><span class="setup-mode-validity" data-setup-validity="mixHorizontalLinearUnique">Menunggu grid</span></div>
+<strong class="mono" id="setupMaxMixHorizontalLinearUnique">—</strong>
+<small>video maksimum</small>
+</article>
+</div>
+</section>
+</div>
+</section></div><section class="panel disabled matrix-upload-panel" id="sec2">
+<header class="panel-head"><div class="panel-kicker"><span class="panel-step mono">IN</span><span>Input video</span></div>
+<h2>Matriks upload</h2>
+<p class="panel-sub">Isi sel secara individual, drag-and-drop, atau upload massal per baris/kolom. Seluruh matriks ditampilkan penuh tanpa area scroll internal.</p>
+</header>
+<div class="grid-toolbar" id="gridToolbar">
+<div class="grid-progress-block">
+<div class="grid-progress-copy">
+<strong class="mono" id="gridFilledCount">0</strong>
+<span class="grid-progress-separator">/</span>
+<span class="mono" id="gridTotalCount">0</span>
+<span>sel terisi</span>
+</div>
+<div aria-hidden="true" class="mini-progress"><span id="gridProgressFill"></span></div>
+</div>
+<div aria-label="Matriks penuh tanpa scroll internal" class="grid-layout-note"><span class="toolbar-label">Grid penuh</span><span class="grid-shortcut">Ukuran sel mengikuti lebar panel · klik untuk detail · klik dua kali untuk upload</span></div>
+<div class="grid-primary-action"><button class="btn primary" disabled="" id="btnGoRender" type="button">Ke Render →</button></div></div><div class="gridWrap">
+<div id="gridOuter"></div>
+</div><aside class="cell-inspector" hidden="" id="cellInspector">
+<div class="cell-inspector-copy">
+<span class="cell-inspector-eyebrow">SEL TERPILIH</span>
+<strong class="mono" id="inspectorCellLabel">—</strong>
+<span id="inspectorFileName">Belum ada file</span>
+<span class="cell-inspector-status" id="inspectorStatus">Kosong</span>
+</div>
+<button class="btn sm" id="btnInspectorUpload" type="button">Pilih / ganti video</button>
+</aside>
+<p class="hint" id="gridHint">Pilih ukuran matriks untuk mulai mengisi video.</p>
+</section></div>
+<div class="workspace-panel" data-tab-panel="render" hidden=""><section class="panel disabled" id="sec5">
+<header class="panel-head"><div class="panel-kicker"><span class="panel-step mono">02</span><span>Render</span></div>
+<h2>Konfigurasi &amp; render</h2>
+<p class="panel-sub">Pilih mode kombinasi, tentukan jumlah output, atur kualitas, estimasikan ukuran, lalu mulai generate.</p>
+</header>
+<div class="render-ready-summary">
+<div><span>Grid</span><strong class="mono" id="renderMatrixSummary">—</strong></div>
+<div><span>Input siap</span><strong class="mono" id="renderFilledSummary">0 / 0</strong></div>
+<div><span>Klip/output</span><strong class="mono" id="renderClipSummary">—</strong></div>
+<div><span>Status</span><strong id="renderCalcSummary">Menunggu setup</strong></div>
+</div><div class="render-columns"><div class="render-column render-column-left"><div class="optgroup render-section render-section-left">
+<div class="optgroup-label">Kualitas output</div>
+<div class="row">
+<label class="field compact">
+<span>Preset cepat</span>
+<select id="qualityPreset">
+<option selected="" value="source720">Setara sumber — 720p @24fps (hemat, rekomendasi)</option>
+<option value="balanced1080">Seimbang — 1080p @30fps</option>
+<option value="max1080">Maksimal — 1080p @30fps kualitas tinggi</option>
+<option value="custom">Kustom…</option>
+</select>
+</label>
+</div>
+<div class="row">
+<label class="field compact">
+<span>Resolusi</span>
+<select id="resPreset">
+<option selected="" value="720x1280">720 × 1280 (vertikal 720p)</option>
+<option value="1080x1920">1080 × 1920 (vertikal 1080p)</option>
+<option value="540x960">540 × 960 (vertikal 540p)</option>
+<option value="1440x2560">1440 × 2560 (vertikal 2K)</option>
+<option value="custom">Kustom…</option>
+</select>
+</label>
+<label class="field compact" id="resCustomWrap" style="display:none">
+<span>Lebar × Tinggi (px)</span>
+<span class="dim-inputs">
+<input class="mono" id="resCustomW" min="16" placeholder="Lebar" step="2" type="number"/>
+<span class="dim-x">×</span>
+<input class="mono" id="resCustomH" min="16" placeholder="Tinggi" step="2" type="number"/>
+</span>
+</label>
+<label class="field compact">
+<span>Frame rate (fps)</span>
+<select id="fpsSelect">
+<option selected="" value="24">24 (setara sumber)</option>
+<option value="25">25</option>
+<option value="30">30</option>
+<option value="50">50</option>
+<option value="60">60</option>
+</select>
+</label>
+</div>
+<div class="row">
+<label class="field compact">
+<span>Kontrol bitrate</span>
+<select id="rateMode">
+<option selected="" value="crf">Kualitas tetap (CRF) — rekomendasi</option>
+<option value="bitrate">Bitrate target</option>
+</select>
+</label>
+<label class="field compact" id="qualityWrap">
+<span>Kualitas (CRF)</span>
+<select id="qualitySelect">
+<option value="18">18 — sangat tinggi (file besar)</option>
+<option value="20">20 — tinggi</option>
+<option selected="" value="23">23 — seimbang (setara sumber)</option>
+<option value="26">26 — hemat</option>
+<option value="28">28 — sangat hemat (file kecil)</option>
+</select>
+</label>
+<label class="field compact" id="videoBitrateWrap" style="display:none">
+<span>Bitrate video (kbps)</span>
+<input class="mono" id="videoBitrateK" min="100" step="100" type="number" value="2000"/>
+</label>
+<label class="field compact" id="audioBitrateWrap" style="display:none">
+<span>Bitrate audio (kbps)</span>
+<input class="mono" id="audioBitrateK" min="16" step="16" type="number" value="128"/>
+</label>
+</div>
+<p class="hint" id="qualityHint">Default disetel setara sumber 720p @24fps agar tidak ada upscale/bitrate berlebih — render lebih cepat &amp; file lebih kecil. Naikkan hanya bila sumber Anda memang lebih tinggi. CRF lebih kecil = kualitas lebih tinggi (file lebih besar).</p>
+</div><div class="optgroup render-section render-section-left">
+<div class="optgroup-label">Folder output</div>
+<div class="row">
+<label class="field compact">
+<span>Pengelompokan</span>
+<select id="folderPolicy">
+<option value="all">Semua video, satu folder</option>
+<option value="4">Folder isi 4 video</option>
+<option value="5">Folder isi 5 video</option>
+<option selected="" value="24">Folder isi 24 video</option>
+<option value="custom">Manual…</option>
+</select>
+</label>
+<label class="field compact" id="folderPolicyCustomWrap" style="display:none">
+<span>Jumlah video per folder</span>
+<input class="mono" id="folderPolicyCustom" min="1" placeholder="mis. 10" step="1" type="number"/>
+</label>
+</div>
+<p class="hint">Output dibungkus per N video dalam subfolder 1, 2, 3, …</p>
+</div><div class="optgroup render-section render-section-left">
+<div class="optgroup-label">Performa</div>
+<div class="row">
+<label class="field compact">
+<span>Metode render</span>
+<select id="renderMethod">
+<option value="fast">Cepat — normalisasi 1× + gabung tanpa re-encode</option>
+<option selected="" value="classic">Klasik — re-encode penuh per video</option>
+</select>
+</label>
+<label class="field compact">
+<span>Worker paralel</span>
+<select id="parallelWorkers">
+<option selected="" value="auto">Auto</option>
+<option value="1">1</option>
+<option value="2">2</option>
+<option value="3">3</option>
+<option value="4">4</option>
+</select>
+</label>
+</div>
+<p class="hint">Metode Klasik dipilih sebagai default untuk perilaku paling konservatif dan kompatibel. Metode Cepat menormalisasi tiap klip sekali lalu merangkai output tanpa re-encode; gunakan untuk batch besar bila ingin memangkas waktu proses.</p>
+</div></div><div class="render-column render-column-right"><div class="optgroup render-section render-section-right">
+<div class="optgroup-label">Audio &amp; encoder</div>
+<div class="row modes" id="audioModes">
+<label class="check mode"><input checked="" id="audioMute" name="audioMode" type="radio" value="mute"/><span class="check-text">Mute <em class="note">tanpa suara (default)</em></span></label>
+<label class="check mode"><input id="audioKeep" name="audioMode" type="radio" value="keep"/><span class="check-text">Keep <em class="note">audio asli tiap klip</em></span></label>
+<label class="check mode"><input id="audioReplace" name="audioMode" type="radio" value="replace"/><span class="check-text">Replace <em class="note">ganti dgn audio eksternal (1 lapis, utuh)</em></span></label>
+<label class="check mode"><input id="audioMix" name="audioMode" type="radio" value="mix"/><span class="check-text">Mix <em class="note">audio asli + audio eksternal digabung</em></span></label>
+</div>
+<div class="audioUploadPanel" id="audioUploadPanel" style="display:none">
+<div class="audio-auto-upload">
+<label class="field compact">
+<span>Pilih audio (bisa banyak file, 1-n)</span>
+<input accept="audio/*" id="audioFileInput" multiple="" type="file"/>
+</label>
+<span aria-live="polite" class="audio-upload-status" id="audioUploadStatus">File langsung diunggah setelah dipilih.</span>
+</div>
+<div class="audioSummary" id="audioSummary">
+<span id="audioCountBadge">🎵 0 file audio ter-upload</span>
+<button class="btn sm ghost" disabled="" id="btnAudioViewList" type="button">Lihat daftar</button>
+<button class="btn sm danger" disabled="" id="btnAudioClearAll" type="button">Hapus semua</button>
+</div>
+<p class="hint">
+                Audio membentang di 1 video hasil generate secara utuh (bukan per klip). Bila lebih dari 1 file,
+                dipakai bergilir (rolling): output ke-1 → audio ke-1, output ke-2 → audio ke-2, dst, lalu berulang.
+                Jika audio lebih panjang dari video, ujungnya dipotong. Jika lebih pendek, sisa durasi jadi hening (tidak di-loop).
+              </p>
+</div>
+<div class="row">
+<label class="field compact">
+<span>Encoder</span>
+<select id="encoderMode">
+<option selected="" value="auto">Auto (rekomendasi)</option>
+<option value="nvenc">GPU NVIDIA (NVENC)</option>
+<option value="vaapi">GPU AMD/Intel (VAAPI)</option>
+<option value="cpu">CPU (paling kompatibel)</option>
+</select>
+</label>
+</div>
+<p class="hint" id="encoderDetected">Auto memakai GPU bila terdeteksi dan otomatis fallback ke CPU. Encoder aktif tercatat di log.</p>
+</div><div class="optgroup render-section render-section-right">
+<div class="optgroup-label">Jumlah output</div>
+<div class="row">
+<label class="check"><input checked="" id="batchNone" name="batchMode" type="radio"/><span class="check-text">Tanpa limit <em class="note">semua kombinasi</em></span></label>
+<label class="check"><input id="batchLimit" name="batchMode" type="radio"/><span class="check-text">Dengan limit <em class="note">batch size manual</em></span></label>
+<label class="field compact">
+<span>Batch size (output per mode)</span>
+<input class="mono" id="batchSize" min="1" placeholder="mis. 100" step="1" type="number" value="100"/>
+</label>
+</div>
+<p class="hint batch-safety warn" id="batchSafetyHint">Tanpa limit tetap aktif. Jika hasil melebihi 30.000 video, aplikasi akan meminta konfirmasi sebelum render dimulai.</p></div><div class="optgroup render-section render-section-right">
+<div class="optgroup-label">Mode kombinasi</div>
+<div class="modes" id="modes">
+<label class="check mode mode-card" data-mode-card="horizontal"><input id="mHorizontal" type="checkbox"/><span class="mode-card-body"><span class="mode-card-top"><strong class="mode-card-title">Acak per Track</strong><span class="mode-validity" data-mode-validity="horizontal">Menunggu kalkulasi</span></span><span class="mode-output-row"><span class="mode-output-label">Maksimum video hasil</span><strong class="mono" id="maxHorizontal">—</strong></span></span></label>
+<label class="check mode mode-card" data-mode-card="mixHorizontal"><input id="mMixHorizontal" type="checkbox"/><span class="mode-card-body"><span class="mode-card-top"><strong class="mode-card-title">Acak Lintas Track</strong><span class="mode-validity" data-mode-validity="mixHorizontal">Menunggu kalkulasi</span></span><span class="mode-output-row"><span class="mode-output-label">Maksimum video hasil</span><strong class="mono" id="maxMixHorizontal">—</strong></span></span></label>
+<label class="check mode mode-card" data-mode-card="mixHorizontalLinear"><input id="mMixHorizontalLinear" type="checkbox"/><span class="mode-card-body"><span class="mode-card-top"><strong class="mode-card-title">Urutan Clip</strong><span class="mode-validity" data-mode-validity="mixHorizontalLinear">Menunggu kalkulasi</span></span><span class="mode-output-row"><span class="mode-output-label">Maksimum video hasil</span><strong class="mono" id="maxMixHorizontalLinear">—</strong></span></span></label>
+<label class="check mode mode-card" data-mode-card="mixHorizontalLinearUnique"><input id="mMixHorizontalLinearUnique" type="checkbox"/><span class="mode-card-body"><span class="mode-card-top"><strong class="mode-card-title">Urutan Clip — Track Unik</strong><span class="mode-validity" data-mode-validity="mixHorizontalLinearUnique">Menunggu kalkulasi</span></span><span class="mode-output-row"><span class="mode-output-label">Maksimum video hasil</span><strong class="mono" id="maxMixHorizontalLinearUnique">—</strong></span></span></label>
+</div>
+</div></div></div>
+<!-- v1.6 — KUALITAS OUTPUT (resolusi/fps/bitrate) -->
+<div class="sizeEstimate" hidden="" id="sizeEstimate">
+<div class="sizeEstimate-head">
+<span class="sizeEstimate-title">Estimasi ukuran output</span>
+<button class="btn sm" id="btnEstimateSize" type="button">Hitung estimasi ukuran</button>
+</div>
+<div class="sizeEstimate-body" id="sizeEstimateBody">
+<p class="hint">Pilih minimal satu mode, lalu klik "Hitung estimasi ukuran" untuk melihat perkiraan total GB.</p>
+</div>
+</div>
+<div class="row actions">
+<button class="btn primary lg" disabled="" id="btnGenerate">Generate</button>
+<button class="btn danger lg" hidden="" id="btnStop">■ Stop</button>
+</div>
+<div class="monitor" hidden="" id="progressWrap">
+<div class="monitor-head">
+<span class="monitor-title">Monitor render</span>
+<span class="chip" id="phaseChip"></span>
+</div>
+<div class="monitor-stats" id="globalLine"></div>
+<div class="bar big"><div id="globalBarFill"></div></div>
+<div id="perModeProgress"></div>
+<pre class="log" id="log"></pre>
+<div class="outdir mono" hidden="" id="outDirLine"></div>
+</div>
+</section></div>
+</div>
+</main>
+<!-- MODAL PEMILIH FOLDER -->
+<!-- MODAL DAFTAR AUDIO -->
+<div class="modal" id="storageModal" style="display: none;">
+<div class="modal-content">
+<div class="modal-header">
+<h3>Pilih folder penyimpanan</h3>
+<span class="close-modal" id="closeStorageModal">×</span>
+</div>
+<div class="modal-body">
+<div class="path-display-wrap">
+<button class="btn sm" id="btnStorageUp">↑ Naik</button>
+<span class="path-text mono" id="currentStoragePath">/app</span>
+</div>
+<div class="folder-list-wrap">
+<div class="folder-list" id="storageFolderList"></div>
+</div>
+<p class="modal-hint">Klik dua kali untuk membuka folder. Klik sekali untuk memilih, lalu tekan "Pilih folder ini".</p>
+</div>
+<div class="modal-footer">
+<button class="btn primary" id="btnSelectStorageFolder">Pilih folder ini</button>
+<button class="btn ghost" id="btnCancelStorageModal">Batal</button>
+</div>
+</div>
+</div><div class="modal" id="audioListModal" style="display: none;">
+<div class="modal-content">
+<div class="modal-header">
+<h3>Daftar audio ter-upload</h3>
+<span class="close-modal" id="closeAudioListModal">×</span>
+</div>
+<div class="modal-body">
+<div class="folder-list-wrap">
+<div class="folder-list" id="audioListBody"></div>
+</div>
+<p class="modal-hint">Urutan di sini = urutan rolling round-robin per output video.</p>
+</div>
+<div class="modal-footer">
+<button class="btn ghost" id="btnCloseAudioListModal">Tutup</button>
+</div>
+</div>
+</div><div class="modal large-output-modal" id="largeOutputModal" style="display:none;">
+<div class="modal-content">
+<div class="modal-header">
+<div><span class="warning-kicker">KONFIRMASI JUMLAH OUTPUT</span><h3>Jumlah video sangat besar</h3></div>
+</div>
+<div class="modal-body">
+<div class="large-output-number"><strong class="mono" id="largeOutputCount">—</strong><span>video akan dibuat</span></div>
+<div class="large-output-facts">
+<div><span>Ambang peringatan</span><strong class="mono" id="largeOutputThreshold">30.000</strong></div>
+<div><span>Ukuran grid</span><strong class="mono" id="largeOutputGrid">—</strong></div>
+</div>
+<div class="large-output-modes" id="largeOutputModes"></div>
+<p class="modal-hint warning-copy">Tidak ada batas maksimum permanen. Lanjutkan hanya setelah memastikan mode, ruang penyimpanan, dan estimasi output sudah benar.</p>
+</div>
+<div class="modal-footer">
+<button class="btn ghost" id="btnReviewLargeOutput" type="button">Periksa kembali</button>
+<button class="btn danger" id="btnConfirmLargeOutput" type="button">Tetap Generate</button>
+</div>
+</div>
+</div>
+<script src="/static/app.js?v=1.22.1"></script>
+<script src="/static/remote-auth.js?v=1.22.1"></script>
+</body>
+</html>

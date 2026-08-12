@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Remote Server{% endblock %}</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <a class="brand" href="/dashboard">Remote Server</a>
+      <span class="version">v{{ app_version }}</span>
+    </div>
+    {% if admin %}
+    <nav>
+      <a href="/dashboard">Device</a>
+      <a href="/sites">Lokasi</a>
+      <a href="/activation-keys">Kode Aktivasi</a>
+      <a href="/suspicious">Kecurigaan</a>
+      <a href="/exports/activity.csv">Export CSV</a>
+      <a href="/integrations">Integrasi</a>
+      <a href="/system">Sistem</a>
+      <a href="/account">Akun</a>
+      <form action="/logout" method="post" class="inline-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="link-button">Keluar</button>
+      </form>
+    </nav>
+    {% endif %}
+  </header>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>

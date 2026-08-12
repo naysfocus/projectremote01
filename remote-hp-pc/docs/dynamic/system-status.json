@@ -1,0 +1,24 @@
+{
+  "version": "1.42",
+  "updated_at": "2026-08-01",
+  "focus": "windows-native-caption-paste",
+  "posts_per_session": 24,
+  "legacy_video_sources": 4,
+  "dynamic_video_collections": false,
+  "android_client": false,
+  "device_pairing": false,
+  "operator_username_password": false,
+  "schedule": {
+    "slots": 24,
+    "first_hour": 0,
+    "last_hour": 23,
+    "random_minute_min": 1,
+    "random_minute_max": 15
+  },
+  "compatibility": {
+    "legacy_flat_folder": true,
+    "legacy_active_sessions": true,
+    "legacy_posting_hours_api": true,
+    "legacy_policy_request_ignored": true
+  }
+}

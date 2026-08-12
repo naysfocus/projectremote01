@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Remote HP v1.50</title>
+<link rel="stylesheet" href="/static/style.css?v=1.50">
+</head>
+<body>
+
+<!-- ══════════ SIDEBAR ══════════ -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">
+      <div class="logo-dot"></div>
+      Remote HP
+    </div>
+  </div>
+
+  <nav class="sidebar-section">
+    <div class="sidebar-label">Menu</div>
+    <div class="nav-item active" data-page="dashboard"><span class="icon">📊</span> Dashboard</div>
+    <div class="nav-item" data-page="upload"><span class="icon">📤</span> Upload</div>
+    <div class="nav-item" data-page="settings"><span class="icon">⚙️</span> Pengaturan</div>
+  </nav>
+
+  <div class="divider"></div>
+
+  <div class="sidebar-section device-section-head">
+    <div class="sidebar-label">Perangkat HP</div>
+    <button id="btnRefreshHp" class="icon-btn" type="button" title="Refresh status online/offline" aria-label="Refresh status perangkat">🔄</button>
+  </div>
+
+  <div class="hp-list" id="hpList">
+    <!-- diisi oleh app.js -->
+  </div>
+
+  <div class="sidebar-add-btn" id="btnAddHp">+ Tambah HP</div>
+</aside>
+<div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
+
+<!-- ══════════ MAIN ══════════ -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="sidebar-toggle icon-btn" id="sidebarToggle" type="button" aria-label="Buka menu perangkat" aria-expanded="false">☰</button>
+      <div class="breadcrumb" id="breadcrumb">
+        <span class="muted">Pilih HP &amp; akun untuk mulai</span>
+      </div>
+      <div id="topbarStatus"></div>
+    </div>
+    <div class="topbar-right" id="topbarActions">
+      <!-- diisi oleh app.js sesuai konteks -->
+    </div>
+  </header>
+
+  <!-- ═══════ PAGE: DASHBOARD ═══════ -->
+  <div class="page active" id="page-dashboard">
+    <div class="page-wrap dashboard-wrap">
+      <div class="page-head">
+        <div class="page-title">📊 Dashboard</div>
+        <div class="page-subtitle">Ringkasan aktivitas upload, status perangkat, dan riwayat sesi.</div>
+      </div>
+
+      <div class="card dashboard-stats-card">
+        <div class="card-header">
+          <div class="card-title">Statistik Hari Ini</div>
+          <button class="btn btn-ghost btn-sm" id="btnRefreshDashboard">🔄 Refresh</button>
+        </div>
+        <div class="stats-grid dashboard-stats-grid" id="statsGrid">
+          <div class="stat-item"><div class="stat-num blue" id="statUpload">0</div><div class="stat-label">Upload</div></div>
+          <div class="stat-item"><div class="stat-num green" id="statAkun">0</div><div class="stat-label">Akun Selesai</div></div>
+          <div class="stat-item"><div class="stat-num yellow" id="statSisa">0</div><div class="stat-label">Sesi Aktif</div></div>
+          <div class="stat-item"><div class="stat-num purple" id="statHpOnline">0</div><div class="stat-label">HP Online</div></div>
+        </div>
+      </div>
+
+      <section class="dashboard-history-section" aria-labelledby="dashboardHistoryTitle">
+        <div class="dashboard-section-head">
+          <div>
+            <div class="page-title dashboard-section-title" id="dashboardHistoryTitle">📋 Riwayat Upload</div>
+            <div class="page-subtitle">Semua sesi upload yang telah selesai. Klik baris untuk melihat detail video.</div>
+          </div>
+        </div>
+
+        <div class="filter-bar dashboard-history-filters">
+          <select class="select" id="filterDevice"><option value="">Semua HP</option></select>
+          <select class="select" id="filterAccount"><option value="">Semua Akun</option></select>
+          <input type="date" class="select" id="filterDate">
+          <button class="btn btn-ghost btn-sm" id="btnClearFilter">Reset Filter</button>
+        </div>
+
+        <div class="card dashboard-history-card">
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Waktu</th><th>Tanggal Batch</th><th>HP</th><th>Akun</th><th>Folder</th><th>Video</th><th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="historyTableBody">
+                <!-- diisi app.js -->
+              </tbody>
+            </table>
+          </div>
+          <div id="historyEmpty" class="empty-state" style="display:none">
+            <div class="emoji">📭</div>
+            <div class="title">Belum ada riwayat</div>
+            <div class="desc">Riwayat akan muncul setelah Anda menyelesaikan sesi upload.</div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ═══════ PAGE: UPLOAD ═══════ -->
+  <div class="page" id="page-upload">
+    <div class="page-wrap upload-page-wrap">
+      <section class="panel-main">
+        <div id="uploadPanelLeft">
+          <div class="card">
+            <div class="empty-state">
+              <div class="emoji">📱</div>
+              <div class="title">Belum ada akun dipilih</div>
+              <div class="desc">Pilih HP lalu pilih akun dari sidebar kiri untuk memulai sesi upload.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ═══════ PAGE: SETTINGS ═══════ -->
+  <div class="page" id="page-settings">
+    <div class="page-wrap settings-wrap">
+      <div class="page-head settings-page-head">
+        <div>
+          <div class="page-title">⚙️ Pengaturan</div>
+          <div class="page-subtitle">Kelola caption, jadwal posting, koneksi perangkat, dan penyimpanan aplikasi.</div>
+        </div>
+        <div class="settings-page-actions">
+          <button class="btn btn-ghost" id="btnBackupDb">⬇️ Backup Database</button>
+          <button class="btn btn-primary" id="btnSaveSettings">💾 Simpan Pengaturan</button>
+        </div>
+      </div>
+
+      <div class="settings-grid">
+        <!-- CAPTION TEMPLATES -->
+        <section class="card settings-card settings-caption-card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">💬 Template Caption</div>
+              <div class="card-caption">Kelola kumpulan caption yang dipakai oleh generator otomatis.</div>
+            </div>
+            <div class="card-header-actions">
+              <button class="btn btn-ghost" id="btnUploadCaptions">📄 Unggah File</button>
+              <button class="btn btn-primary" id="btnAddCaption">＋ Tambah</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="captionCountBar" class="settings-toolbar">
+              <span class="muted" id="captionCountLabel"></span>
+              <button class="btn btn-danger" id="btnDeleteAllCaptions">🗑️ Hapus Semua</button>
+            </div>
+            <div id="captionTemplateList" class="caption-template-list">
+              <!-- diisi app.js -->
+            </div>
+          </div>
+        </section>
+
+        <!-- Input file tersembunyi untuk unggah caption (.md/.txt) -->
+        <input type="file" id="captionFileInput" accept=".md,.txt,.markdown,text/plain,text/markdown" style="display:none">
+
+        <!-- ATURAN JADWAL 24 POST -->
+        <section class="card settings-card settings-schedule-card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">⏰ Aturan Jadwal 24 Post</div>
+              <div class="card-caption">Satu sesi selalu memiliki 24 slot jam, dari 00:MM sampai 23:MM.</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="schedule-rule-summary">
+              <strong>Jam ditetapkan otomatis oleh server</strong>
+              <span>Post 1 memakai jam 00, Post 2 jam 01, dan seterusnya sampai Post 24 jam 23. Hanya bagian menit yang diacak.</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Batas Menit Acak</label>
+              <div class="input-suffix-wrap">
+                <input type="number" class="input" id="setRandomRange" min="1" max="15" step="1" placeholder="15">
+                <span class="input-suffix">menit</span>
+              </div>
+              <span class="field-help">Setiap MM dibuat dalam rentang <b>01</b> sampai batas ini, maksimal <b>15</b>.</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- KONEKSI ADB USB / Wi-Fi (v1.50) -->
+        <section class="card settings-card settings-connection-card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">📶 Koneksi HP — USB &amp; Wi-Fi Debugging</div>
+              <div class="card-caption">v1.50 memisahkan identitas HP dari transport ADB. Wi-Fi dapat menjadi koneksi utama dan USB tetap menjadi fallback tanpa membuat HP baru.</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="connection-summary-box">
+              <strong>Mode otomatis per HP</strong>
+              <span id="connModeStatus">Wi-Fi diprioritaskan jika tersedia. Jika Wi-Fi putus tetapi USB online, Remote HP otomatis memakai USB.</span>
+            </div>
+
+            <div id="wifiSetupBox" style="margin-top:16px">
+              <div class="settings-form-grid">
+                <div class="form-group settings-field-wide wifi-setup-block">
+                  <label class="form-label">HP yang dikonfigurasi</label>
+                  <div class="wifi-setup-row">
+                    <select class="input" id="wifiConnectDeviceSelect" style="max-width:320px"></select>
+                    <span class="connection-device-status" id="wifiSelectedStatus">Pilih HP untuk melihat status.</span>
+                  </div>
+                </div>
+
+                <div class="form-group settings-field-wide wifi-setup-block">
+                  <label class="form-label">Cara 1 — Aktifkan Wi-Fi dari USB sekali</label>
+                  <span class="field-help">Cocok untuk HP yang sudah terdaftar dengan serial USB. Colok kabel, aktifkan USB Debugging, lalu Remote HP mendeteksi IP dan menyimpan endpoint Wi-Fi tanpa mengganti identitas HP.</span>
+                  <div class="wifi-setup-row">
+                    <select class="input" id="wifiUsbDeviceSelect" style="max-width:260px"></select>
+                    <input type="text" class="input" id="wifiUsbIpOverride" placeholder="IP HP (opsional, auto-deteksi)" style="max-width:220px">
+                    <button class="btn btn-primary" id="btnWifiEnableFromUsb" type="button">⚡ Aktifkan Wi-Fi dari USB</button>
+                  </div>
+                </div>
+
+                <div class="form-group settings-field-wide wifi-setup-block">
+                  <label class="form-label">Cara 2 — Wireless Debugging Android 11+ tanpa kabel</label>
+                  <span class="field-help">Di HP buka Opsi Pengembang → Debugging Nirkabel → Pasangkan perangkat dengan kode pairing. IP:Port pairing hanya dipakai sekali; IP:Port koneksi disimpan pada HP yang dipilih.</span>
+                  <div class="wifi-setup-row">
+                    <input type="text" class="input" id="wifiPairIpPort" placeholder="IP:Port Pairing, mis. 192.168.1.10:39215" style="max-width:260px">
+                    <input type="text" class="input" id="wifiPairCode" placeholder="Kode 6 digit" style="max-width:140px">
+                    <button class="btn btn-secondary" id="btnWifiPair" type="button">🔗 Pasangkan</button>
+                  </div>
+                  <div class="wifi-setup-row" style="margin-top:8px">
+                    <input type="text" class="input" id="wifiConnectIpPort" placeholder="IP:Port Koneksi, mis. 192.168.1.10:37123">
+                    <button class="btn btn-primary" id="btnWifiConnect" type="button">📶 Hubungkan &amp; Simpan</button>
+                    <button class="btn btn-ghost" id="btnWifiReconnect" type="button">↻ Reconnect</button>
+                    <button class="btn btn-ghost" id="btnWifiDisconnect" type="button">Putus Wi-Fi</button>
+                  </div>
+                </div>
+
+                <div class="form-group settings-field-wide wifi-setup-block">
+                  <label class="form-label">Preferensi transport HP</label>
+                  <div class="wifi-setup-row">
+                    <select class="input" id="wifiPreferredTransport" style="max-width:260px">
+                      <option value="auto">Otomatis — Wi-Fi utama, USB fallback</option>
+                      <option value="wifi">Prioritaskan Wi-Fi, USB fallback</option>
+                      <option value="usb">Prioritaskan USB, Wi-Fi fallback</option>
+                    </select>
+                    <label class="checkbox-row" style="margin:0">
+                      <input type="checkbox" id="wifiAutoReconnect" checked>
+                      <span>Auto reconnect Wi-Fi</span>
+                    </label>
+                    <button class="btn btn-secondary" id="btnWifiSavePreference" type="button">Simpan Preferensi</button>
+                  </div>
+                  <span class="field-help">Auto reconnect hanya mencoba endpoint yang sudah disimpan. Tidak melakukan scan jaringan.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ANDROID CONTROLLER (v1.50) -->
+        <section class="card settings-card settings-android-card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">📱 Remote HP Android Controller</div>
+              <div class="card-caption">Pair satu Android Controller ke satu HP. Android hanya mengendalikan workflow Remote HP melalui LAN; TikTok tetap dioperasikan manual.</div>
+            </div>
+            <button class="btn btn-ghost" id="btnAndroidRefresh" type="button">↻ Refresh</button>
+          </div>
+          <div class="card-body">
+            <div class="settings-form-grid">
+              <div class="form-group">
+                <label class="form-label">HP yang dipasangkan</label>
+                <select class="input" id="androidPairDevice"></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Masa berlaku kode</label>
+                <select class="input" id="androidPairExpiry"><option value="10">10 menit</option><option value="15">15 menit</option><option value="30">30 menit</option></select>
+              </div>
+              <div class="form-group settings-field-wide">
+                <div class="wifi-setup-row">
+                  <button class="btn btn-secondary" id="btnAndroidCacheRefresh" type="button">↻ Refresh Cache Video Android</button>
+                  <button class="btn btn-primary" id="btnAndroidPairCode" type="button">＋ Buat QR Pairing</button>
+                  <span class="field-help" id="androidLanUrl">Jalankan mode LAN agar Android dapat mengakses PC.</span>
+                  <span class="field-help" id="androidCacheStatus">Cache setup Android belum dibuat.</span>
+                </div>
+              </div>
+            </div>
+            <div id="androidPairResult" style="display:none;margin-top:14px"></div>
+            <div class="table-wrap" style="margin-top:16px">
+              <table><thead><tr><th>Status</th><th>Android</th><th>HP</th><th>Versi</th><th>Terakhir terlihat</th><th>Aksi</th></tr></thead>
+              <tbody id="androidClientRows"><tr><td colspan="6" class="empty">Belum dimuat.</td></tr></tbody></table>
+            </div>
+          </div>
+        </section>
+
+        <!-- PATH SISTEM -->
+        <section class="card settings-card settings-path-card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">🗂️ Koneksi &amp; Path Sistem</div>
+              <div class="card-caption">Konfigurasi root sumber video, ADB, scrcpy, dan lokasi tujuan di HP.</div>
+            </div>
+          </div>
+          <div class="card-body settings-form-grid">
+            <div class="form-group settings-field-wide">
+              <label class="form-label">Root Folder Sumber Video</label>
+              <input type="text" class="input" id="setStoragePath" placeholder="(otomatis: folder utama aplikasi)">
+              <span class="field-help">Sistem otomatis membuat <b>video-1</b>, <b>video-2</b>, <b>video-3</b>, dan <b>video-4</b> di dalam root ini. Panel Upload hanya memilih salah satunya.</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Path ADB</label>
+              <input type="text" class="input" id="setAdbPath" placeholder="adb / adb.exe">
+              <span class="field-help">Kosongkan agar sistem mendeteksi ADB otomatis.</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Path scrcpy</label>
+              <input type="text" class="input" id="setScrcpyPath" placeholder="scrcpy / scrcpy.exe">
+              <span class="field-help">Dipakai oleh tombol Mirror. Kosongkan jika sudah tersedia di PATH.</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Mode Mirror Layar</label>
+              <select class="input" id="setScrcpyMode">
+                <option value="stay_awake">Anti-sleep — layar HP tetap menyala</option>
+                <option value="stay_awake_screen_off">Anti-sleep + matikan layar fisik HP</option>
+              </select>
+              <span class="field-help">Mode kedua menghemat daya; tampilan mirror di komputer tetap aktif.</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Folder Target di HP</label>
+              <input type="text" class="input" id="setHpTargetDir" placeholder="/sdcard/DCIM/RemoteHP/">
+              <span class="field-help">Folder tujuan saat video dikirim melalui ADB.</span>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="settings-save-note">
+        <span>Perubahan belum diterapkan sebelum tombol <b>Simpan Pengaturan</b> ditekan.</span>
+        <button class="btn btn-primary" id="btnSaveSettingsBottom">💾 Simpan Pengaturan</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════ MODAL CONTAINER ══════════ -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modalBox">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Judul</div>
+      <button class="modal-close icon-btn" id="modalClose">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<!-- ══════════ TOAST ══════════ -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script src="/static/upload.js?v=1.50"></script>
+<script src="/static/app.js?v=1.50"></script>
+<script src="/static/remote-auth.js?v=1.50"></script>
+</body>
+</html>

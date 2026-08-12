@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Kode Aktivasi · Remote Server{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div>
+    <h1>Kode Aktivasi</h1>
+    <p class="muted">Kode sekali pakai untuk satu aplikasi pada satu device. Semua kode berlaku 1 jam.</p>
+  </div>
+</div>
+
+{% if created %}
+<div class="alert success created-key-box">
+  <div>
+    <strong>Kode berhasil dibuat</strong><br>
+    <code class="activation-code">{{ created }}</code>
+  </div>
+  <button type="button" class="button" data-copy-value="{{ created }}">Salin kode</button>
+</div>
+{% endif %}
+
+<section class="panel padded">
+  <form action="/activation-keys" method="post" class="horizontal-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Aplikasi
+      <select name="app_type">
+        <option value="matrix_generator">Video Mixer</option>
+        <option value="remote_hp">Remote HP</option>
+      </select>
+    </label>
+    <div class="fixed-value-card">
+      <span>Masa berlaku</span>
+      <strong>1 jam</strong>
+    </div>
+    <button type="submit" class="button primary">Generate kode aktivasi</button>
+  </form>
+</section>
+
+<section class="panel">
+  <div class="table-wrap"><table>
+    <thead><tr><th>Kode</th><th>Aplikasi</th><th>Status</th><th>Dibuat</th><th>Kadaluarsa</th><th>Aksi</th></tr></thead>
+    <tbody>
+    {% for key in keys %}<tr class="{% if created == key.code %}highlight-row{% endif %}">
+      <td>
+        <code class="activation-code">{{ key.code }}</code>
+        <button type="button" class="copy-link" data-copy-value="{{ key.code }}">Salin</button>
+      </td>
+      <td>{{ 'Video Mixer' if key.app_type == 'matrix_generator' else 'Remote HP' }}</td>
+      <td><span class="badge {{ key.status }}">{{ key.status }}</span></td>
+      <td>{{ format_time(key.created_at) }}</td><td>{{ format_time(key.expires_at) }}</td>
+      <td>{% if key.status == 'pending' %}<form action="/activation-keys/{{ key.code }}/cancel" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="button small danger" type="submit">Batalkan</button></form>{% endif %}</td>
+    </tr>{% else %}<tr><td colspan="6" class="empty">Belum ada kode aktivasi.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</section>
+{% endblock %}

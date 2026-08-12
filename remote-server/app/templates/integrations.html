@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% block title %}Integrasi · Remote Server{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div>
+    <h1>Integrasi</h1>
+    <p class="muted">Kelola Telegram Bot dan Cloudflare Tunnel langsung dari web app. Tidak perlu mengedit .env, JSON, YAML, atau file konfigurasi lain.</p>
+  </div>
+</div>
+
+{% if success %}<div class="alert success">{{ success }}</div>{% endif %}
+{% if error %}<div class="alert danger">{{ error }}</div>{% endif %}
+
+<section class="panel padded integration-card">
+  <div class="integration-header">
+    <div>
+      <h2>Telegram Bot</h2>
+      <p class="muted">Menu tombol untuk membuat kode aktivasi 1 jam, mengecek status, device, kode aktif, dan keamanan.</p>
+    </div>
+    {% set telegram_runtime = runtime.telegram or {} %}
+    <span class="badge {{ 'active' if telegram_runtime.running else ('warning' if config.telegram_enabled else 'pending') }}">
+      {{ 'Aktif' if telegram_runtime.running else ('Menunggu' if config.telegram_enabled else 'Nonaktif') }}
+    </span>
+  </div>
+
+  <div class="integration-status-grid">
+    <div><span>Token tersimpan</span><strong>{{ telegram_masked }}</strong></div>
+    <div><span>Bot</span><strong>{{ '@' + config.telegram_bot_username if config.telegram_bot_username else 'Belum diuji' }}</strong></div>
+    <div><span>Admin Telegram</span><strong>{{ config.telegram_admin_id or 'Belum dipasangkan' }}</strong></div>
+    <div><span>Proses</span><strong>{{ 'Berjalan' if telegram_runtime.running else 'Tidak berjalan' }}</strong></div>
+  </div>
+
+  <div class="wizard-box compact-wizard">
+    <h3>Menu bot setelah aktif</h3>
+    <div class="telegram-menu-preview">
+      <span>🔑 Buat Kode Aktivasi</span>
+      <span>📊 Status Sistem</span>
+      <span>💻 Device</span>
+      <span>🧾 Kode Aktif</span>
+      <span>⚠️ Keamanan</span>
+    </div>
+  </div>
+
+  {% if config.telegram_pair_code %}
+  <div class="alert warning">
+    <strong>Kode pemasangan: <code>{{ config.telegram_pair_code }}</code></strong><br>
+    Buka bot Telegram milikmu, lalu kirim <code>/start {{ config.telegram_pair_code }}</code>. Kode berlaku sekitar 20 menit.
+  </div>
+  {% endif %}
+
+  <form action="/integrations/telegram/save" method="post" class="stack-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Token baru dari BotFather
+      <input type="password" name="token" autocomplete="off" placeholder="Kosongkan jika token tidak diubah">
+      <small class="field-help">Bila token pernah terlihat di screenshot atau log, buat token baru di BotFather dan masukkan di sini.</small>
+    </label>
+    <label>Telegram Admin ID (opsional)
+      <input type="text" name="admin_id" value="{{ config.telegram_admin_id or '' }}" inputmode="numeric" placeholder="Boleh dikosongkan untuk pairing otomatis">
+      <small class="field-help">Cara termudah: kosongkan, aktifkan bot, simpan, lalu gunakan kode pairing yang muncul.</small>
+    </label>
+    <label class="checkbox-row">
+      <input type="checkbox" name="enabled" {% if config.telegram_enabled %}checked{% endif %}>
+      Aktifkan Telegram Bot
+    </label>
+    <div class="action-row wrap-actions">
+      <button class="button primary" type="submit">Simpan dan terapkan Telegram</button>
+    </div>
+  </form>
+
+  <div class="button-row-separated">
+    <form action="/integrations/telegram/test" method="post" class="inline-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="button" type="submit">Uji token bot</button>
+    </form>
+    <form action="/integrations/telegram/send-test" method="post" class="inline-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="button" type="submit">Kirim pesan uji</button>
+    </form>
+    <form action="/integrations/telegram/clear" method="post" class="inline-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="button danger" type="submit">Hapus token</button>
+    </form>
+  </div>
+  {% if telegram_runtime.last_log %}<p class="runtime-log">Log terakhir: <code>{{ telegram_runtime.last_log }}</code></p>{% endif %}
+</section>
+
+<section class="panel padded integration-card">
+  <div class="integration-header">
+    <div>
+      <h2>Cloudflare Tunnel</h2>
+      <p class="muted">Wizard dua tahap: hubungkan connector dahulu, lalu buat alamat HTTPS.</p>
+    </div>
+    {% set cloudflare_runtime = runtime.cloudflare or {} %}
+    <span class="badge {{ 'active' if cloudflare_runtime.connected else ('warning' if cloudflare_runtime.running else 'pending') }}">
+      {{ 'Terhubung' if cloudflare_runtime.connected else ('Mencoba terhubung' if cloudflare_runtime.running else ('Menunggu' if config.cloudflare_enabled else 'Nonaktif')) }}
+    </span>
+  </div>
+
+  <div class="integration-status-grid">
+    <div><span>Token tersimpan</span><strong>{{ cloudflare_masked }}</strong></div>
+    <div><span>Hostname HTTPS</span><strong class="break-value">{{ cloudflare_public_url or 'Belum diisi' }}</strong></div>
+    <div><span>Mode koneksi</span><strong>{{ (cloudflare_runtime.protocol or config.cloudflare_protocol or 'auto')|upper }}</strong></div>
+    <div><span>Koneksi</span><strong>{{ 'Terdaftar' if cloudflare_runtime.connected else 'Belum terhubung' }}</strong></div>
+  </div>
+
+  {% if cloudflare_runtime.guidance %}
+  <div class="alert {{ 'success' if cloudflare_runtime.problem_code == 'connected' else 'warning' }}">
+    <strong>Status connector:</strong> {{ cloudflare_runtime.guidance }}
+  </div>
+  {% endif %}
+
+  <div class="cloudflare-steps">
+    <div class="setup-step">
+      <span class="step-number">1</span>
+      <div>
+        <h3>Buat tunnel dan salin perintah</h3>
+        <ol>
+          <li>Di Cloudflare buka <strong>Networking → Tunnels → Create a Tunnel</strong>.</li>
+          <li>Beri nama tunnel, lalu pilih <strong>Docker</strong>.</li>
+          <li>Klik ikon salin pada perintah <code>docker run ... --token eyJ...</code>.</li>
+          <li><strong>Jangan jalankan perintahnya.</strong> Tempel seluruh perintah ke kolom di bawah; server akan mengambil token secara otomatis.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="setup-step">
+      <span class="step-number">2</span>
+      <div>
+        <h3>Hubungkan connector</h3>
+        <p>Aktifkan Cloudflare, pilih mode <strong>Auto</strong>, lalu simpan. Tunggu sampai status menjadi <strong>Terhubung</strong>.</p>
+      </div>
+    </div>
+    <div class="setup-step">
+      <span class="step-number">3</span>
+      <div>
+        <h3>Buat alamat HTTPS</h3>
+        <ol>
+          <li>Di tunnel Cloudflare buka <strong>Routes → Add route → Published application</strong>.</li>
+          <li>Pilih subdomain dan domain, misalnya <code>remote.domainkamu.com</code>.</li>
+          <li>Service type: <strong>HTTP</strong>.</li>
+          <li>Service URL: <code>http://server:8000</code>.</li>
+          <li>Kembali ke web app, isi hostname, simpan, lalu klik <strong>Uji alamat HTTPS</strong>.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <form action="/integrations/cloudflare/save" method="post" class="stack-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Perintah Docker atau Tunnel Token
+      <textarea name="token" rows="3" autocomplete="off" placeholder="Tempel seluruh perintah Docker dari Cloudflare, atau hanya token eyJ..."></textarea>
+      <small class="field-help">Kosongkan bila token tidak diubah. Token disimpan terenkripsi.</small>
+    </label>
+    <label>Mode koneksi
+      <select name="protocol">
+        <option value="auto" {% if (config.cloudflare_protocol or 'auto') == 'auto' %}selected{% endif %}>Auto — disarankan</option>
+        <option value="http2" {% if config.cloudflare_protocol == 'http2' %}selected{% endif %}>HTTP/2 — TCP 7844</option>
+        <option value="quic" {% if config.cloudflare_protocol == 'quic' %}selected{% endif %}>QUIC — UDP 7844</option>
+      </select>
+      <small class="field-help">Gunakan Auto. Pilih HTTP/2 hanya bila UDP diblokir tetapi TCP 7844 tersedia.</small>
+    </label>
+    <label>Hostname publik HTTPS (boleh dikosongkan pada tahap pertama)
+      <input type="text" name="public_base_url" value="{{ cloudflare_public_url }}" placeholder="remote.domainkamu.com">
+      <small class="field-help">Boleh isi tanpa https://. Jangan masukkan perintah Docker di kolom ini.</small>
+    </label>
+    <label class="checkbox-row">
+      <input type="checkbox" name="enabled" {% if config.cloudflare_enabled %}checked{% endif %}>
+      Aktifkan Cloudflare Tunnel
+    </label>
+    <div class="action-row wrap-actions">
+      <button class="button primary" type="submit">Simpan dan terapkan Cloudflare</button>
+    </div>
+  </form>
+
+  <div class="button-row-separated">
+    <form action="/integrations/cloudflare/restart" method="post" class="inline-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="button" type="submit">Mulai ulang connector</button>
+    </form>
+    <form action="/integrations/cloudflare/test" method="post" class="inline-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="button" type="submit">Uji alamat HTTPS</button>
+    </form>
+    <form action="/integrations/cloudflare/clear" method="post" class="inline-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="button danger" type="submit">Hapus token</button>
+    </form>
+  </div>
+
+  {% if cloudflare_runtime.recent_logs %}
+  <details class="log-details">
+    <summary>Lihat log Cloudflare terakhir</summary>
+    <pre>{% for line in cloudflare_runtime.recent_logs %}{{ line }}
+{% endfor %}</pre>
+  </details>
+  {% endif %}
+</section>
+
+<section class="panel padded">
+  <h2>Penyimpanan konfigurasi</h2>
+  <p class="muted">Token tidak ditulis ke file yang perlu diedit. Web app mengenkripsi token dengan secret instalasi dan menyimpannya di database SQLite pada volume Docker persisten. Container integrasi menerapkan perubahan otomatis.</p>
+</section>
+{% endblock %}

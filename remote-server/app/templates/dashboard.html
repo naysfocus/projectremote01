@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · Remote Server{% endblock %}
+{% block content %}
+{% if stats.unreviewed_suspicion_events %}
+<div class="alert warning">
+  <strong>⚠ {{ stats.unreviewed_suspicion_events }} kecurigaan belum ditinjau.</strong>
+  <a href="/suspicious">Tinjau sekarang</a>
+</div>
+{% endif %}
+
+<div class="page-heading">
+  <div><h1>Daftar Device</h1><p class="muted">Status aplikasi lokal yang telah diaktivasi.</p></div>
+  <a class="button primary" href="/activation-keys">Buat kode aktivasi</a>
+</div>
+
+<section class="stats-grid">
+  <article class="stat"><span>Total device</span><strong>{{ stats.total_devices }}</strong></article>
+  <article class="stat"><span>Sesi online</span><strong>{{ stats.online_sessions }}</strong></article>
+  <article class="stat"><span>Video upload hari ini</span><strong>{{ stats.uploaded_videos_today }}</strong></article>
+  <article class="stat"><span>Output Video Mixer</span><strong>{{ stats.generated_videos_today }}</strong></article>
+  <article class="stat"><span>Proses aktif</span><strong>{{ stats.active_jobs }}</strong></article>
+  <article class="stat"><span>HP / akun Remote HP</span><strong>{{ stats.remote_hp_handsets }} / {{ stats.remote_hp_accounts }}</strong><small>{{ stats.remote_hp_online_handsets }} HP online · {{ stats.remote_hp_android_clients }} Android paired</small></article>
+</section>
+
+<section class="panel padded">
+  <form method="get" action="/dashboard" class="filter-grid">
+    <label>Cari device
+      <input name="q" value="{{ filters.q }}" placeholder="Nama, OS, fingerprint">
+    </label>
+    <label>Aplikasi
+      <select name="app_type">
+        <option value="">Semua</option>
+        <option value="matrix_generator" {% if filters.app_type == 'matrix_generator' %}selected{% endif %}>Video Mixer</option>
+        <option value="remote_hp" {% if filters.app_type == 'remote_hp' %}selected{% endif %}>Remote HP</option>
+      </select>
+    </label>
+    <label>Lokasi
+      <select name="site_id"><option value="">Semua</option>{% for site in sites %}<option value="{{ site.id }}" {% if filters.site_id == site.id %}selected{% endif %}>{{ site.name }}</option>{% endfor %}</select>
+    </label>
+    <label>Status
+      <select name="status">
+        <option value="">Semua</option>
+        <option value="active" {% if filters.status == 'active' %}selected{% endif %}>Aktif</option>
+        <option value="revoked" {% if filters.status == 'revoked' %}selected{% endif %}>Dicabut</option>
+        <option value="online" {% if filters.status == 'online' %}selected{% endif %}>Online</option>
+        <option value="offline" {% if filters.status == 'offline' %}selected{% endif %}>Offline</option>
+      </select>
+    </label>
+    <div class="filter-actions"><button class="button primary" type="submit">Terapkan</button><a class="button" href="/dashboard">Reset</a></div>
+  </form>
+</section>
+
+<section class="panel">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Status</th><th>Device</th><th>Lokasi / Tag</th><th>OS</th><th>Aplikasi</th><th>Terakhir aktif</th><th></th></tr></thead>
+      <tbody>
+      {% for device in devices %}
+        <tr>
+          <td><span class="status-dot {{ 'online' if device.is_online else 'offline' }}"></span>{{ 'Online' if device.is_online else 'Offline' }}</td>
+          <td>
+            <strong>{{ device.label }}</strong>
+            {% if device.unreviewed_suspicion_count %}<span class="badge warning">⚠ {{ device.unreviewed_suspicion_count }}</span>{% endif %}
+            <small>{{ device.fingerprint_masked }}</small>
+          </td>
+          <td>{{ device.site_name or 'Belum ditempatkan' }}<small>{{ device.tags|join(', ') if device.tags else 'Tanpa tag' }}</small></td>
+          <td>{{ device.os_info or device.os_type or '—' }}</td>
+          <td>
+            {% for auth in device.authorizations %}
+              <span class="badge {{ 'revoked' if auth.status == 'revoked' else 'active' }}">
+                {{ 'Video Mixer' if auth.app_type == 'matrix_generator' else 'Remote HP' }}{% if auth.status == 'revoked' %} · dicabut{% endif %}
+              </span>
+            {% else %}—{% endfor %}
+          </td>
+          <td>{{ device.last_seen_at or 'Belum ada' }}</td>
+          <td><a class="button small" href="/devices/{{ device.id }}">Detail</a></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7" class="empty">Tidak ada device yang sesuai filter.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if pagination.pages > 1 %}
+  <div class="pagination">
+    {% if pagination.page > 1 %}<a class="button small" href="/dashboard?q={{ filters.q }}&app_type={{ filters.app_type }}&status={{ filters.status }}&site_id={{ filters.site_id or '' }}&page={{ pagination.page - 1 }}">Sebelumnya</a>{% endif %}
+    <span>Halaman {{ pagination.page }} dari {{ pagination.pages }} · {{ pagination.total }} data</span>
+    {% if pagination.page < pagination.pages %}<a class="button small" href="/dashboard?q={{ filters.q }}&app_type={{ filters.app_type }}&status={{ filters.status }}&site_id={{ filters.site_id or '' }}&page={{ pagination.page + 1 }}">Berikutnya</a>{% endif %}
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

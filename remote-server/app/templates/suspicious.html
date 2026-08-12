@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Kecurigaan · Remote Server{% endblock %}
+{% block content %}
+<div class="page-heading"><div><h1>Kecurigaan Pemakaian Ganda</h1><p class="muted">Percobaan membuka sesi kedua saat sesi lama masih aktif.</p></div></div>
+<section class="panel">
+  <div class="table-wrap"><table>
+    <thead><tr><th>Waktu</th><th>Device</th><th>Aplikasi</th><th>IP percobaan</th><th>Status</th><th>Aksi</th></tr></thead>
+    <tbody>
+    {% for event, device in events %}<tr>
+      <td>{{ format_time(event.detected_at) }}</td><td><a href="/devices/{{ device.id }}">{{ device.label or ('Device #' ~ device.id) }}</a></td>
+      <td>{{ 'Video Mixer' if event.app_type == 'matrix_generator' else 'Remote HP' }}</td><td>{{ event.rejected_request_ip or '—' }}</td>
+      <td>{{ event.admin_action or ('sudah ditinjau' if event.admin_reviewed else 'belum ditinjau') }}</td>
+      <td>{% if not event.admin_reviewed %}<div class="action-row">
+        <form action="/suspicious/{{ event.id }}/review" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="action" value="ignored"><button class="button small" type="submit">Abaikan</button></form>
+        <form action="/suspicious/{{ event.id }}/review" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="action" value="revoked"><button class="button small danger" type="submit">Revoke</button></form>
+      </div>{% endif %}</td>
+    </tr>{% else %}<tr><td colspan="6" class="empty">Belum ada kejadian kecurigaan.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</section>
+{% endblock %}

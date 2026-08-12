@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Lokasi · Remote Server{% endblock %}
+{% block content %}
+<div class="page-heading"><div><h1>Lokasi Operasional</h1><p class="muted">Kelompokkan device berdasarkan tempat dan zona waktu.</p></div></div>
+<div class="two-column">
+<section class="panel padded">
+  <h2>Tambah lokasi</h2>
+  <form method="post" action="/sites" class="stack-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Nama lokasi<input name="name" required maxlength="160" placeholder="Contoh: Jakarta Barat"></label>
+    <label>Kode lokasi<input name="code" maxlength="40" placeholder="Contoh: JKT-BARAT"></label>
+    <label>Zona waktu<select name="timezone_name">{% for value,label in timezone_options %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label>
+    <label>Catatan<textarea name="notes" rows="3"></textarea></label>
+    <button class="button primary" type="submit">Tambah lokasi</button>
+  </form>
+</section>
+<section class="panel padded">
+  <h2>Ringkasan semua lokasi</h2>
+  <p><strong>{{ sites|sum(attribute='device_count') }}</strong> device telah ditempatkan.</p>
+  <p class="muted">Device yang belum memiliki lokasi tetap muncul pada halaman Device.</p>
+</section>
+</div>
+<section class="panel"><div class="table-wrap"><table>
+<thead><tr><th>Lokasi</th><th>Zona</th><th>Device</th><th>HP / Akun</th><th>Upload hari ini</th><th>Output mixer</th><th>Proses aktif</th><th></th></tr></thead>
+<tbody>{% for site in sites %}<tr>
+<td><strong>{{ site.name }}</strong><small>{{ site.code or 'Tanpa kode' }}</small></td><td>{{ site.timezone_name }}</td><td>{{ site.device_count }}</td>
+<td>{{ site.remote_hp_handsets }} HP · {{ site.remote_hp_accounts }} akun<small>{{ site.remote_hp_online_handsets }} online · {{ site.remote_hp_android_clients }} Android</small></td><td>{{ site.uploaded_videos_today }} video · {{ site.upload_sessions_today }} sesi</td><td>{{ site.generated_videos_today }} video · {{ site.mixer_jobs_today }} job</td><td>{{ site.active_jobs }}</td>
+<td><a class="button small" href="/sites/{{ site.id }}">Kelola</a></td>
+</tr>{% else %}<tr><td colspan="8" class="empty">Belum ada lokasi.</td></tr>{% endfor %}</tbody>
+</table></div></section>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Login Admin · Remote Server{% endblock %}
+{% block content %}
+<section class="login-card">
+  <h1>Login Admin</h1>
+  <p class="muted">Dashboard otentikasi dan monitoring aplikasi.</p>
+  {% if error %}<div class="alert danger">{{ error }}</div>{% endif %}
+  {% if success %}<div class="alert success">{{ success }}</div>{% endif %}
+  <form method="post" action="/login" class="stack-form">
+    <label>Username<input name="username" autocomplete="username" required autofocus></label>
+    <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
+    <button type="submit" class="button primary">Masuk</button>
+  </form>
+</section>
+{% endblock %}

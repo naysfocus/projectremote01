@@ -1,0 +1,30 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: video-mixer:1.22.1
+    container_name: video_mixer_app
+    init: true
+    ports:
+      - "127.0.0.1:5000:5000"
+    volumes:
+      - ./app:/app
+      - video_matrix_client_data:/config
+    environment:
+      HOME: /home/app
+      REMOTE_CLIENT_DATA_DIR: /config
+      HOST_OS_TYPE: "${HOST_OS_TYPE:-windows}"
+      HOST_OS_INFO: "${HOST_OS_INFO:-Windows host via Docker Desktop}"
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:5000/api/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+
+volumes:
+  video_matrix_client_data:
+    name: video_matrix_client_data

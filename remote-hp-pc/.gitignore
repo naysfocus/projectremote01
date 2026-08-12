@@ -1,0 +1,18 @@
+# Virtual environment (dibuat otomatis oleh setup, tidak perlu disimpan)
+.venv/
+
+# Database lokal (dibuat otomatis saat aplikasi pertama jalan)
+remote_hp.db
+
+# Cache Python
+__pycache__/
+*.pyc
+
+# File OS
+.DS_Store
+Thumbs.db
+
+# Video yang ditaruh user di folder video/ (jangan ikut tersimpan ke git),
+# tapi tetap simpan folder + panduannya.
+video/*
+!video/CARA-PAKAI-FOLDER-INI.txt

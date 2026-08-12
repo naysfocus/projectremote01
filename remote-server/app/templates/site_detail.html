@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ site.name }} · Remote Server{% endblock %}
+{% block content %}
+<div class="page-heading"><div><h1>{{ site.name }}</h1><p class="muted">{{ site.code or 'Tanpa kode' }} · {{ site.timezone_name }}</p></div><a class="button" href="/sites">Kembali</a></div>
+<section class="stats-grid">
+<article class="stat"><span>Device</span><strong>{{ summary.total_devices }}</strong></article>
+<article class="stat"><span>Video upload hari ini</span><strong>{{ summary.uploaded_videos_today }}</strong></article>
+<article class="stat"><span>Output Video Mixer</span><strong>{{ summary.generated_videos_today }}</strong></article>
+<article class="stat"><span>Proses aktif</span><strong>{{ summary.active_jobs }}</strong></article>
+<article class="stat"><span>HP / akun Remote HP</span><strong>{{ summary.remote_hp_handsets }} / {{ summary.remote_hp_accounts }}</strong><small>{{ summary.remote_hp_online_handsets }} HP online · {{ summary.remote_hp_android_clients }} Android paired</small></article>
+</section>
+<div class="two-column"><section class="panel padded"><h2>Pengaturan lokasi</h2>
+<form method="post" action="/sites/{{ site.id }}" class="stack-form"><input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<label>Nama<input name="name" value="{{ site.name }}" required></label><label>Kode<input name="code" value="{{ site.code or '' }}"></label>
+<label>Zona waktu<select name="timezone_name">{% for value,label in timezone_options %}<option value="{{ value }}" {% if value==site.timezone_name %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+<label>Catatan<textarea name="notes" rows="4">{{ site.notes or '' }}</textarea></label><label class="checkbox"><input type="checkbox" name="is_active" value="1" {% if site.is_active %}checked{% endif %}> Lokasi aktif</label>
+<button class="button primary" type="submit">Simpan</button></form></section>
+<section class="panel padded"><h2>Device di lokasi ini</h2>{% for device in devices %}<p><a href="/devices/{{ device.id }}">{{ device.label }}</a> · {{ 'Online' if device.is_online else 'Offline' }}</p>{% else %}<p class="empty">Belum ada device.</p>{% endfor %}</section></div>
+<section class="panel padded"><h2>Pekerjaan aktif</h2><div class="table-wrap"><table>
+<thead><tr><th>Device</th><th>Aplikasi</th><th>Pekerjaan</th><th>Progres</th><th>Diperbarui</th></tr></thead><tbody>
+{% for job in active_jobs %}<tr><td><a href="/devices/{{ job.device_id }}">{{ job.device_label }}</a></td><td>{{ job.app_label }}</td><td>{{ job.title or job.client_job_id }}</td><td>{{ job.completed_count }} / {{ job.planned_count }} ({{ job.progress_percent }}%)</td><td>{{ job.updated_at }}</td></tr>
+{% else %}<tr><td colspan="5" class="empty">Tidak ada pekerjaan aktif.</td></tr>{% endfor %}</tbody></table></div></section>
+{% endblock %}

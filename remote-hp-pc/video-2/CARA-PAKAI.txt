@@ -1,0 +1,23 @@
+REMOTE HP — SUMBER VIDEO 2
+
+Folder ini adalah sumber "Video 2" pada Panel 2 menu Upload.
+
+Struktur yang disarankan:
+
+video-2/
+├── 1/
+│   ├── video_0001.mp4
+│   └── ...
+├── 2/
+│   └── ...
+└── 3/
+    └── ...
+
+Aturan:
+- Taruh batch video di subfolder angka: 1, 2, 3, dan seterusnya.
+- Aplikasi memproses subfolder angka paling kecil yang belum selesai.
+- Video diproses satu per satu sesuai urutan nama file.
+- Setelah dikonfirmasi selesai, file video dihapus dari PC dan HP.
+- File CARA-PAKAI.txt boleh dibiarkan; aplikasi hanya membaca file video.
+
+Lokasi root keempat folder dapat diubah dari menu Pengaturan.

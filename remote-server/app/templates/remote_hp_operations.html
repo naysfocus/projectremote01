@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Progres Remote HP · {{ device.label }}{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div><h1>Progres Remote HP</h1><p class="muted">{{ device.label }} · {{ device.site_name or 'Belum ditempatkan' }}</p></div>
+  <a class="button" href="/devices/{{ device.id }}">Kembali ke device</a>
+</div>
+
+<section class="stats-grid">
+  <article class="stat"><span>HP terdaftar</span><strong>{{ summary.handsets }}</strong><small>{{ summary.online_handsets }} online</small></article>
+  <article class="stat"><span>Akun unik</span><strong>{{ summary.accounts }}</strong><small>{{ summary.placements }} penempatan</small></article>
+  <article class="stat"><span>Upload {{ summary.selected_date }}</span><strong>{{ summary.uploaded_videos }}</strong><small>{{ summary.completed_sessions }} sesi selesai</small></article>
+  <article class="stat"><span>Sesi aktif</span><strong>{{ summary.active_sessions }}</strong><small>Sinkron terakhir: {{ summary.last_synced_at or 'Belum ada' }}</small></article>
+  <article class="stat"><span>Android Controller</span><strong>{{ summary.android_clients }}</strong><small>{{ summary.android_online }} online</small></article>
+</section>
+
+<section class="panel padded">
+  <form method="get" class="filter-grid remote-hp-filter">
+    <label>Tanggal batch<input type="date" name="batch_date" value="{{ filters.batch_date }}"></label>
+    <label>Cari akun<input name="q" value="{{ filters.q }}" placeholder="Username"></label>
+    <label>HP<select name="handset_id"><option value="">Semua HP</option>{% for hp in handsets %}<option value="{{ hp.id }}" {% if filters.handset_id == hp.id %}selected{% endif %}>{{ hp.name }}</option>{% endfor %}</select></label>
+    <div class="filter-actions"><button class="button primary">Terapkan</button><a class="button" href="/devices/{{ device.id }}/remote-hp">Hari ini</a></div>
+  </form>
+</section>
+
+<section class="panel">
+  <div class="panel-title-row"><h2>Ringkasan tanggal batch</h2><p class="muted">31 tanggal terbaru. Klik tanggal untuk melihat progres setiap akun.</p></div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Tanggal</th><th>Akun upload</th><th>Video</th><th>Sesi</th><th>Selesai</th><th>Aktif</th></tr></thead>
+    <tbody>{% for row in batch_rows %}<tr>
+      <td><a href="/devices/{{ device.id }}/remote-hp?batch_date={{ row.batch_date }}{% if filters.handset_id %}&handset_id={{ filters.handset_id }}{% endif %}"><strong>{{ row.batch_date }}</strong></a></td>
+      <td>{{ row.account_count }}</td><td><strong>{{ row.completed_count }}</strong>{% if row.failed_count %}<small>{{ row.failed_count }} gagal</small>{% endif %}</td><td>{{ row.session_count }}</td><td>{{ row.finished_count }}</td><td>{{ row.active_count }}</td>
+    </tr>{% else %}<tr><td colspan="6" class="empty">Belum ada tanggal batch yang tersinkron.</td></tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+
+<section class="panel">
+  <div class="panel-title-row"><h2>Progres setiap akun pada {{ filters.batch_date }}</h2><p class="muted">Akun tanpa sesi tetap ditampilkan sebagai “Belum upload”.</p></div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Akun</th><th>Penempatan HP</th><th>Video</th><th>Sesi</th><th>Status</th><th>Sinkron terakhir</th></tr></thead>
+    <tbody>{% for row in account_rows %}<tr>
+      <td><strong>@{{ row.username }}</strong><small>ID lokal {{ row.client_account_id }}</small></td>
+      <td>{% for p in row.placements %}<span class="badge">{{ p.handset }} · {{ 'Original' if p.slot == 'original' else 'Kloning' }}</span>{% else %}<span class="muted">Tanpa penempatan</span>{% endfor %}</td>
+      <td><strong>{{ row.completed_count }}</strong>{% if row.planned_count %} / {{ row.planned_count }}{% endif %}{% if row.failed_count %}<small>{{ row.failed_count }} gagal</small>{% endif %}</td>
+      <td>{{ row.session_count }}</td>
+      <td><span class="badge {{ 'active' if row.status in ['finished','active'] else ('warning' if row.status == 'not_started' else 'revoked') }}">{{ {'not_started':'Belum upload','active':'Sedang berjalan','finished':'Selesai','cancelled':'Dibatalkan','failed':'Gagal'}.get(row.status, row.status) }}</span></td>
+      <td>{{ row.last_sync or '—' }}</td>
+    </tr>{% else %}<tr><td colspan="6" class="empty">Tidak ada akun yang sesuai filter.</td></tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+
+<section class="panel">
+  <div class="panel-title-row"><h2>Inventaris HP</h2><p class="muted">ADB USB/Wi-Fi dan Android Controller dipantau dari Remote HP PC. IP:port adalah transport, bukan identitas HP.</p></div>
+  <div class="table-wrap"><table><thead><tr><th>Status</th><th>HP</th><th>ADB</th><th>Android Controller</th><th>Akun</th><th>Sinkron terakhir</th></tr></thead>
+  <tbody>{% for hp in handsets %}<tr>
+    <td><span class="status-dot {{ 'online' if hp.is_online else 'offline' }}"></span>{{ 'Online' if hp.is_online else 'Offline' }}</td>
+    <td><strong>{{ hp.name }}</strong><small>{{ hp.label or '' }}</small></td>
+    <td><strong>{{ (hp.active_transport or 'offline')|upper }}</strong><small>{% if hp.active_transport == 'wifi' %}{{ hp.wifi_endpoint or hp.active_serial or '—' }}{% elif hp.active_transport == 'usb' %}{{ hp.usb_serial or hp.active_serial or '—' }}{% else %}USB: {{ hp.usb_serial or '—' }} · Wi-Fi: {{ hp.wifi_endpoint or '—' }}{% endif %}</small></td>
+    <td>{% if hp.android_count %}<strong>{{ hp.android_online }}/{{ hp.android_count }} online</strong>{% for mobile in hp.mobile_clients %}<small><span class="status-dot {{ 'online' if mobile.online else 'offline' }}"></span>{{ mobile.display_name }}{% if mobile.app_version %} · v{{ mobile.app_version }}{% endif %}</small>{% endfor %}{% else %}<span class="muted">Belum dipasangkan</span>{% endif %}</td>
+    <td>{{ hp.account_count }}<small>{{ hp.accounts|join(', ') }}</small></td><td>{{ hp.last_synced_at }}</td>
+  </tr>{% else %}<tr><td colspan="6" class="empty">Inventaris belum tersinkron.</td></tr>{% endfor %}</tbody></table></div>
+</section>
+
+<section class="panel">
+  <div class="panel-title-row"><h2>Riwayat sesi terbaru</h2><p class="muted">Maksimal 300 sesi; mengikuti filter akun dan HP di atas.</p></div>
+  <div class="table-wrap"><table><thead><tr><th>Tanggal batch</th><th>Akun</th><th>HP / Slot</th><th>Video</th><th>Status</th><th>Mulai / Selesai</th></tr></thead>
+  <tbody>{% for row in history %}<tr><td>{{ row.batch_date or '—' }}</td><td><strong>@{{ row.username }}</strong><small>Sesi #{{ row.client_session_id }}</small></td><td>{{ row.handset }}<small>{{ row.app_slot or '—' }}</small></td><td>{{ row.completed_count }} / {{ row.planned_count }}{% if row.failed_count %}<small>{{ row.failed_count }} gagal</small>{% endif %}</td><td><span class="badge {{ 'active' if row.status in ['active','finished'] else 'revoked' }}">{{ row.status }}</span></td><td>{{ row.started_at or '—' }}<small>{{ row.finished_at or 'Belum selesai' }}</small></td></tr>{% else %}<tr><td colspan="6" class="empty">Belum ada riwayat sesi yang tersinkron.</td></tr>{% endfor %}</tbody></table></div>
+</section>
+{% endblock %}

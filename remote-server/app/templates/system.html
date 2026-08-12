@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Status Sistem · Remote Server{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div><h1>Status Sistem</h1><p class="muted">Kesehatan deployment, database, integrasi, scheduler, dan backup.</p></div>
+  <div class="action-row">
+    <form action="/system/readiness" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="button primary" type="submit">Uji kesiapan server</button>
+    </form>
+    <form action="/system/backup" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="button" type="submit">Buat backup sekarang</button>
+    </form>
+  </div>
+</div>
+
+{% if readiness.checks %}
+<section class="panel padded readiness-panel">
+  <div class="integration-header">
+    <div>
+      <h2>Hasil uji kesiapan</h2>
+      <p class="muted">Diperbarui {{ readiness.updated_at or '-' }}.</p>
+    </div>
+    <span class="badge {{ 'active' if readiness.ready else 'warning' }}">{{ 'SIAP PRODUKSI' if readiness.ready else 'PERLU PERHATIAN' }}</span>
+  </div>
+  <div class="readiness-grid">
+    {% for item in readiness.checks %}
+    <article class="readiness-item {{ 'passed' if item.passed else 'failed' }}">
+      <strong>{{ '✓' if item.passed else '!' }} {{ item.name }}</strong>
+      <span>{{ item.detail }}</span>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% else %}
+<div class="alert warning">Klik <strong>Uji kesiapan server</strong> untuk memeriksa seluruh komponen sebelum integrasi aplikasi lokal dimulai.</div>
+{% endif %}
+
+<section class="stats-grid">
+  <article class="stat"><span>Versi server</span><strong>{{ system.version }}</strong></article>
+  <article class="stat"><span>Database</span><strong class="status-text {{ 'good' if system.database_ok else 'bad' }}">{{ 'Siap' if system.database_ok else 'Bermasalah' }}</strong></article>
+  <article class="stat"><span>Scheduler</span><strong class="status-text {{ 'good' if scheduler.status == 'ok' else 'bad' }}">{{ 'Aktif' if scheduler.status == 'ok' else 'Menunggu' }}</strong></article>
+  <article class="stat"><span>Backup terakhir</span><strong class="compact-value">{{ scheduler.last_backup_file or 'Belum ada' }}</strong></article>
+</section>
+
+<div class="two-column">
+<section class="panel padded">
+  <h2>Deployment</h2>
+  <dl class="detail-list">
+    <div><dt>Alamat utama</dt><dd><code>{{ system.public_base_url }}</code></dd></div>
+    <div><dt>Database engine</dt><dd>{{ system.database_kind }}</dd></div>
+    <div><dt>Environment</dt><dd>{{ system.environment }}</dd></div>
+    <div><dt>Cookie HTTPS</dt><dd>{{ 'Otomatis: aman pada HTTPS' if system.cookie_secure_mode == 'auto' else ('Selalu aktif' if system.cookie_secure_mode == 'always' else 'Nonaktif') }}</dd></div>
+  </dl>
+</section>
+
+<section class="panel padded">
+  <h2>Penyimpanan database</h2>
+  <dl class="detail-list">
+    <div><dt>Ukuran</dt><dd>{{ database_summary.size_bytes or 0 }} byte</dd></div>
+    <div><dt>Device</dt><dd>{{ database_summary.counts.devices or 0 }}</dd></div>
+    <div><dt>Heartbeat</dt><dd>{{ database_summary.counts.heartbeats or 0 }}</dd></div>
+    <div><dt>Laporan</dt><dd>{{ database_summary.counts.reports or 0 }}</dd></div>
+    <div><dt>Outbox pending</dt><dd>{{ database_summary.counts.outbox_pending or 0 }}</dd></div>
+  </dl>
+</section>
+</div>
+
+<section class="panel padded">
+  <h2>Kebijakan koneksi client</h2>
+  <dl class="detail-list">
+    <div><dt>Heartbeat</dt><dd>{{ system.heartbeat_interval_seconds }} detik</dd></div>
+    <div><dt>Session timeout</dt><dd>{{ system.session_timeout_seconds }} detik</dd></div>
+    <div><dt>Grace period</dt><dd>{{ system.grace_period_hours }} jam</dd></div>
+  </dl>
+</section>
+
+<section class="panel padded">
+  <div class="integration-header">
+    <div><h2>Integrasi</h2><p class="muted">Konfigurasi dan operasikan integrasi langsung dari web app.</p></div>
+    <a class="button primary" href="/integrations">Buka pengaturan integrasi</a>
+  </div>
+  <dl class="detail-list">
+    <div><dt>Cloudflare Tunnel</dt><dd><span class="badge {{ 'active' if system.integration_runtime.cloudflare.connected else ('warning' if system.cloudflare_enabled else 'pending') }}">{{ 'Terhubung' if system.integration_runtime.cloudflare.connected else ('Diaktifkan' if system.cloudflare_enabled else 'Nonaktif') }}</span></dd></div>
+    <div><dt>Telegram Bot</dt><dd><span class="badge {{ 'active' if system.integration_runtime.telegram.running else ('warning' if system.telegram_enabled else 'pending') }}">{{ 'Berjalan' if system.integration_runtime.telegram.running else ('Diaktifkan' if system.telegram_enabled else 'Nonaktif') }}</span></dd></div>
+  </dl>
+</section>
+
+<section class="panel">
+  <div class="panel-title-row"><div><h2>Backup terverifikasi</h2><p class="muted">Backup otomatis disimpan di volume Docker persisten.</p></div></div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>File</th><th>Ukuran</th><th>Integritas</th><th></th></tr></thead>
+    <tbody>
+    {% for item in backups %}<tr>
+      <td><code>{{ item.name }}</code></td><td>{{ item.size }} byte</td>
+      <td><span class="badge {{ 'active' if item.verified else 'revoked' }}">{{ 'Valid' if item.verified else 'Rusak' }}</span></td>
+      <td>{% if item.verified %}<a class="button small" href="/system/backups/{{ item.name }}">Unduh</a>{% endif %}</td>
+    </tr>{% else %}<tr><td colspan="4" class="empty">Backup pertama akan dibuat otomatis oleh scheduler.</td></tr>{% endfor %}
+    <tr><td>Zona waktu tampilan default</td><td>{{ system.display_timezone }}</td></tr></tbody>
+  </table></div>
+</section>
+{% endblock %}

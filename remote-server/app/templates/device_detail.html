@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}{{ device.label }} · Remote Server{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div><h1>{{ device.label }}</h1><p class="muted">{{ device.os_info or device.os_type or 'OS tidak diketahui' }} · {{ device.fingerprint_masked }}</p></div>
+  <a class="button" href="/dashboard">Kembali</a>
+</div>
+
+<div class="two-column">
+  <section class="panel padded">
+    <h2>Identitas device</h2>
+    <form action="/devices/{{ device.id }}/edit" method="post" class="stack-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>Nama device<input name="label" value="{{ device.label }}"></label>
+      <label>Lokasi<select name="site_id"><option value="">Belum ditempatkan</option>{% for site in sites %}<option value="{{ site.id }}" {% if device.site_id == site.id %}selected{% endif %}>{{ site.name }}</option>{% endfor %}</select></label>
+      <label>Tag (pisahkan dengan koma)<input name="tags" value="{{ device.tags|join(', ') }}" placeholder="Contoh: Shift Malam, PC Render"></label>
+      <label>Catatan<textarea name="notes" rows="5">{{ device.notes or '' }}</textarea></label>
+      <button class="button primary" type="submit">Simpan</button>
+    </form>
+  </section>
+
+  <section class="panel padded">
+    <h2>Otorisasi aplikasi</h2>
+    {% for auth in device.authorizations %}
+      <div class="auth-card">
+        <div>
+          <strong>{{ 'Video Mixer' if auth.app_type == 'matrix_generator' else 'Remote HP' }}</strong>
+          <p class="muted">Status: {{ auth.status }} · Versi: {{ auth.app_version or '—' }}</p>
+          {% if auth.is_online %}<span class="badge active">Sesi aktif</span>{% endif %}
+        </div>
+        <form action="/devices/{{ device.id }}/authorization" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <input type="hidden" name="app_type" value="{{ auth.app_type }}">
+          {% if auth.status == 'active' %}
+            <input type="hidden" name="action" value="revoke">
+            <button class="button danger" type="submit">Revoke</button>
+          {% else %}
+            <input type="hidden" name="action" value="reactivate">
+            <button class="button primary" type="submit">Aktifkan kembali</button>
+          {% endif %}
+        </form>
+      </div>
+    {% else %}<p class="empty">Belum ada aplikasi terotorisasi.</p>{% endfor %}
+  </section>
+</div>
+
+
+{% set has_remote_hp = device.authorizations|selectattr('app_type', 'equalto', 'remote_hp')|list %}
+{% if has_remote_hp %}
+<section class="panel padded remote-hp-overview">
+  <div class="section-heading-row">
+    <div>
+      <h2>Operasional Remote HP</h2>
+      <p class="muted">Inventaris HP, akun, penempatan, serta progres upload dari database lokal client.</p>
+    </div>
+    <a class="button primary" href="/devices/{{ device.id }}/remote-hp">Buka progres akun</a>
+  </div>
+  <div class="stats-grid compact-stats">
+    <article class="stat"><span>HP terdaftar</span><strong>{{ device.remote_hp.handsets }}</strong><small>{{ device.remote_hp.online_handsets }} online</small></article>
+    <article class="stat"><span>Akun unik</span><strong>{{ device.remote_hp.accounts }}</strong><small>{{ device.remote_hp.placements }} penempatan</small></article>
+    <article class="stat"><span>Video tanggal terpilih</span><strong>{{ device.remote_hp.uploaded_videos }}</strong><small>{{ device.remote_hp.completed_sessions }} sesi selesai</small></article>
+    <article class="stat"><span>Sesi aktif</span><strong>{{ device.remote_hp.active_sessions }}</strong><small>sinkronisasi otomatis</small></article>
+  </div>
+</section>
+{% endif %}
+
+{% if device.suspicion_events %}
+<section class="panel padded">
+  <h2>Riwayat kecurigaan</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Waktu</th><th>Aplikasi</th><th>IP</th><th>Status</th></tr></thead>
+    <tbody>{% for event in device.suspicion_events %}<tr>
+      <td>{{ event.detected_at }}</td><td>{{ event.app_type }}</td><td>{{ event.request_ip or '—' }}</td>
+      <td>{{ event.admin_action or ('ditinjau' if event.admin_reviewed else 'belum ditinjau') }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+{% endif %}
+
+
+{% if active_jobs %}<section class="panel padded"><h2>Pekerjaan aktif</h2><div class="table-wrap"><table><thead><tr><th>Aplikasi</th><th>Pekerjaan</th><th>Progres</th><th>Diperbarui</th></tr></thead><tbody>{% for job in active_jobs %}<tr><td>{{ job.app_label }}</td><td>{{ job.title or job.client_job_id }}</td><td>{{ job.completed_count }} / {{ job.planned_count }} ({{ job.progress_percent }}%)</td><td>{{ job.updated_at }}</td></tr>{% endfor %}</tbody></table></div></section>{% endif %}
+<section class="panel padded">
+  <h2>Laporan aktivitas terbaru</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Waktu</th><th>Aplikasi</th><th>Event</th><th>Ringkasan</th></tr></thead>
+    <tbody>
+    {% for report in reports %}<tr>
+      <td>{{ report.occurred_at }}</td><td>{{ 'Video Mixer' if report.app_type == 'matrix_generator' else 'Remote HP' }}</td><td>{{ report.event_type }}</td>
+      <td><code>{{ report.summary }}</code></td>
+    </tr>{% else %}<tr><td colspan="4" class="empty">Belum ada laporan aktivitas.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</section>
+{% endblock %}

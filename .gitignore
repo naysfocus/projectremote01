@@ -1,0 +1,53 @@
+# =========================
+# Secrets / Credentials
+# =========================
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa
+id_ed25519
+
+# =========================
+# Dependencies
+# =========================
+node_modules/
+
+# =========================
+# Build / Generated Files
+# =========================
+build/
+dist/
+.gradle/
+local.properties
+*.apk
+*.aab
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# IDE / Editor
+# =========================
+.vscode/
+.idea/
+
+# =========================
+# Operating System
+# =========================
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# =========================
+# Python cache, if any
+# =========================
+__pycache__/
+*.pyc

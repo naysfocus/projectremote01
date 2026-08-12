@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aktivasi Video Mixer v1.22.1</title>
+  <link rel="stylesheet" href="/static/activation.css?v=1.22.1">
+</head>
+<body>
+  <main class="activation-shell">
+    <section class="activation-card">
+      <div class="brand">
+        <span class="matrix-mark"><i></i><i></i><i></i><i></i></span>
+        Video Mixer
+      </div>
+      <div class="version">Client Remote Server · v1.22.1</div>
+      <h1>Aktivasi aplikasi</h1>
+      <p id="activationMessage">Masukkan kode aktivasi satu kali dari admin Remote Server.</p>
+
+      <div class="server-info">
+        <div><span>Server</span><strong>{{ status.server_url }}</strong></div>
+        <div><span>Perangkat</span><strong>{{ status.fingerprint_short }}</strong></div>
+      </div>
+
+      <form id="activationForm">
+        <label for="activationCode">Kode aktivasi Video Mixer</label>
+        <input id="activationCode" name="code" autocomplete="one-time-code" maxlength="16"
+               placeholder="ABCD-EFGH" spellcheck="false" autofocus>
+        <button id="activateButton" type="submit">Aktifkan Video Mixer</button>
+      </form>
+
+      <button id="retryButton" class="secondary" type="button">Coba hubungkan kembali</button>
+      <div id="activationError" class="error" hidden></div>
+      <div id="activationStatus" class="status-pill">Memeriksa status…</div>
+      <p class="help">Kode dibuat dari dashboard atau Telegram Remote Server dan berlaku selama 1 jam.</p>
+    </section>
+  </main>
+  <script src="/static/activation.js?v=1.22.1"></script>
+</body>
+</html>
