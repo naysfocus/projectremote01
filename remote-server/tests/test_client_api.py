@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from datetime import timedelta
+
 from sqlalchemy import select
 
-from app.models import ActivityReport, AppAuthorization, SuspicionEvent
+from app.models import ActivationKey, ActivityReport, AppAuthorization, SuspicionEvent
+from app.utils import utcnow
 
 
 def auth_header(token: str) -> dict[str, str]:
@@ -17,6 +20,68 @@ def test_activation_consumes_key_and_hashes_token(app, activated):
         assert authorization is not None
         assert authorization.access_token_hash != token
         assert token not in authorization.access_token_hash
+
+
+def test_reactivation_with_new_code_reissues_token_for_same_device(app, client, activated):
+    """v1.1 regression test.
+
+    Scenario: client loses its locally stored token (e.g. it could not be
+    decrypted after a Windows restart) but the device fingerprint is
+    unchanged. An admin issues a fresh activation code for the same
+    app_type. This must succeed and hand back a *new* working token instead
+    of failing with already_activated -- while the old token is invalidated
+    and no duplicate AppAuthorization row is created.
+    """
+    old_token = activated["access_token"]
+    same_fingerprint = "a" * 64
+
+    with app.state.database.session_factory() as db:
+        key = ActivationKey(
+            code="RE7Q-2ZKM",
+            app_type="matrix_generator",
+            status="pending",
+            expires_at=utcnow() + timedelta(hours=1),
+        )
+        db.add(key)
+        db.commit()
+
+    response = client.post(
+        "/api/v1/activate",
+        json={
+            "code": "RE7Q-2ZKM",
+            "app_type": "matrix_generator",
+            "fingerprint_hash": same_fingerprint,
+            "os_type": "linux",
+            "os_info": "Ubuntu 24.04",
+            "app_version": "1.7.0",
+        },
+    )
+    assert response.status_code == 200, response.text
+    new_token = response.json()["access_token"]
+    assert new_token != old_token
+
+    with app.state.database.session_factory() as db:
+        authorizations = db.scalars(select(AppAuthorization)).all()
+        # Reissue must reuse the existing row (unique device_id+app_type),
+        # not create a second row for the same device.
+        assert len(authorizations) == 1
+        assert authorizations[0].status == "active"
+
+    # The old token must no longer work.
+    stale = client.post(
+        "/api/v1/session/open",
+        headers=auth_header(old_token),
+        json={"fingerprint_hash": same_fingerprint, "app_version": "1.7.0"},
+    )
+    assert stale.status_code == 401
+
+    # The new token must work.
+    fresh = client.post(
+        "/api/v1/session/open",
+        headers=auth_header(new_token),
+        json={"fingerprint_hash": same_fingerprint, "app_version": "1.7.0"},
+    )
+    assert fresh.status_code == 200, fresh.text
 
 
 def test_session_lock_heartbeat_close_and_reopen(client, app, activated):

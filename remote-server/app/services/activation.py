@@ -60,11 +60,46 @@ def activate(db: Session, payload: ActivateRequest) -> tuple[str, Device]:
             AppAuthorization.app_type == payload.app_type,
         )
     )
-    if existing is not None:
-        db.rollback()
-        raise ActivationError("already_activated", status_code=409)
 
     raw_token = generate_access_token(payload.app_type)
+
+    if existing is not None:
+        # Fingerprint device ini SAMA dengan yang sudah tercatat -- ini bukan
+        # device baru mencoba mengklaim slot orang lain, ini device asli yang
+        # kehilangan token lokalnya (mis. client menghapus token karena gagal
+        # didekripsi setelah restart, reinstall, dsb). Selama admin sudah
+        # menerbitkan kode aktivasi BARU yang valid untuk app_type ini, itu
+        # sudah cukup sebagai otorisasi eksplisit untuk menerbitkan token
+        # pengganti. Terbitkan ulang pada row yang sama (bukan insert baru)
+        # supaya UniqueConstraint(device_id, app_type) tetap terjaga, session
+        # aktif direset, dan histori/statistik device tidak duplikat.
+        existing.status = "active"
+        existing.token_prefix = token_prefix(raw_token)
+        existing.access_token_hash = hash_access_token(raw_token)
+        existing.app_version = payload.app_version
+        existing.activated_at = now
+        existing.revoked_at = None
+        existing.session_id = None
+        existing.session_started_at = None
+        existing.session_last_seen_at = None
+        existing.session_ip = None
+        key.status = "consumed"
+        key.consumed_at = now
+        key.consumed_by_device_id = device.id
+        add_outbox(
+            db,
+            "device_token_reissued",
+            {
+                "device_id": device.id,
+                "label": device.label or f"Device #{device.id}",
+                "app_type": payload.app_type,
+                "reissued_at": now.isoformat(),
+            },
+        )
+        db.commit()
+        db.refresh(device)
+        return raw_token, device
+
     authorization = AppAuthorization(
         device_id=device.id,
         app_type=payload.app_type,

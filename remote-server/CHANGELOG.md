@@ -1,5 +1,23 @@
 # Changelog
 
+## v1.8
+
+- **Perbaikan bug**: aktivasi ulang dari device dengan fingerprint yang sama
+  (mis. token lokal client hilang setelah restart) sebelumnya SELALU
+  ditolak dengan `already_activated (409)`, walaupun admin sudah membuat
+  kode aktivasi baru yang valid untuk device tersebut. Sekarang, jika
+  fingerprint device cocok dengan device yang sudah pernah teraktivasi
+  untuk `app_type` yang sama, mengirim kode aktivasi baru yang valid akan
+  menerbitkan ulang token pada baris `AppAuthorization` yang sama (token
+  lama otomatis menjadi tidak valid), alih-alih menolak permintaan. Ini
+  juga sekaligus memperbaiki tombol **Revoke → Aktifkan kembali** di
+  dashboard admin, yang sebelumnya tidak benar-benar membuka jalan aktivasi
+  ulang karena pengecekan lama tidak memfilter berdasarkan status.
+- Perilaku ini tetap aman: `UniqueConstraint(device_id, app_type)` dijaga
+  (tidak ada baris `AppAuthorization` duplikat), dan device dengan
+  fingerprint yang benar-benar berbeda tidak terpengaruh sama sekali.
+- Menambahkan test regresi `test_reactivation_with_new_code_reissues_token_for_same_device`.
+
 ## v1.7
 
 - Menambahkan mirror inventaris HP, akun, dan penempatan akun dari Remote HP v1.48.

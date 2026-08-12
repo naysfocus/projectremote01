@@ -126,6 +126,44 @@ class RemoteServerClientTests(unittest.TestCase):
         client._flush_reports()
         self.assertEqual(client.reports.count(), 0)
 
+    def test_token_decrypt_failure_only_clears_token_not_fingerprint(self):
+        """v1.1 regression test.
+
+        Previously a DPAPI decrypt failure on load() (e.g. after a Windows
+        restart changes the user/login context) caused the ENTIRE local
+        config to be discarded, including fingerprint_hash. That made the
+        client compute a brand new fingerprint and look like a different
+        device to the server, so re-activation was rejected as
+        already_activated even with a fresh code. Now only the token itself
+        should be cleared; fingerprint_hash and other fields must survive.
+        """
+        client = self.make_client()
+        original_fingerprint = client._config["fingerprint_hash"]
+        client._config["access_token"] = "rh_live_" + "x" * 40
+        client._config["device_id"] = 42
+        client.store.save(client._config)
+
+        def broken_unprotect(_value):
+            raise OSError("Windows gagal membuka token Remote Server.")
+
+        original_unprotect = module._dpapi_unprotect
+        module._dpapi_unprotect = broken_unprotect
+        try:
+            reloaded = client.store.load()
+        finally:
+            module._dpapi_unprotect = original_unprotect
+
+        self.assertNotIn("access_token", reloaded)
+        self.assertEqual(reloaded.get("fingerprint_hash"), original_fingerprint)
+        self.assertEqual(reloaded.get("device_id"), 42)
+        self.assertTrue(reloaded.get("token_recovery_needed"))
+
+    def test_corrupt_config_file_still_resets_cleanly(self):
+        client = self.make_client()
+        client.store.path.write_text("{ this is not valid json", encoding="utf-8")
+        reloaded = client.store.load()
+        self.assertEqual(reloaded, {})
+
 
 if __name__ == "__main__":
     unittest.main()

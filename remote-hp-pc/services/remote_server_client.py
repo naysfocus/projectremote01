@@ -29,7 +29,7 @@ from typing import Any
 import requests
 
 APP_TYPE = "remote_hp"
-APP_VERSION = "1.50.0"
+APP_VERSION = "1.51.0"
 DEFAULT_SERVER_URL = "https://remote.darda.uk"
 DEFAULT_GRACE_HOURS = 3
 DEFAULT_HEARTBEAT_SECONDS = 300
@@ -164,13 +164,35 @@ class ClientStore:
                 return {}
             try:
                 data = json.loads(self.path.read_text(encoding="utf-8"))
-                protected = data.pop("access_token_protected", "")
-                if protected:
-                    data["access_token"] = _dpapi_unprotect(protected)
-                return data
             except (OSError, ValueError, json.JSONDecodeError) as exc:
+                # File itu sendiri rusak/tidak terbaca sama sekali. Di sini saja
+                # aman untuk mulai dari config kosong, karena tidak ada apapun
+                # yang bisa diselamatkan dari file yang tidak valid.
                 log.warning("Konfigurasi Remote Server tidak dapat dibaca: %s", exc)
                 return {}
+
+            protected = data.pop("access_token_protected", "")
+            if protected:
+                try:
+                    data["access_token"] = _dpapi_unprotect(protected)
+                except OSError as exc:
+                    # Token gagal didekripsi (mis. DPAPI terikat ke user/sesi
+                    # login yang berbeda setelah restart). Buang token itu saja
+                    # supaya aplikasi meminta aktivasi ulang -- TAPI jangan buang
+                    # field lain seperti fingerprint_hash/device_id/server_url,
+                    # karena itu bukan yang gagal dibaca. Kalau seluruh config
+                    # ikut dibuang, fingerprint akan dihitung ulang dari nol dan
+                    # device ini akan terlihat seperti "device baru" bagi server,
+                    # padahal token lama masih terdaftar di sana -- itu yang
+                    # menyebabkan aktivasi ulang selalu ditolak "already_activated".
+                    log.warning(
+                        "Token Remote Server gagal didekripsi, token akan diminta "
+                        "ulang tanpa mengubah identitas device: %s",
+                        exc,
+                    )
+                    data.pop("access_token", None)
+                    data["token_recovery_needed"] = True
+            return data
 
     def save(self, data: dict[str, Any]) -> None:
         with self._lock:

@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.51.0
+
+- **Perbaikan bug**: kegagalan dekripsi token lokal (mis. Windows DPAPI gagal
+  membuka token setelah restart / ganti sesi login) sebelumnya membuang
+  SELURUH konfigurasi lokal, termasuk `fingerprint_hash`. Akibatnya device
+  terlihat seperti "device baru" bagi Remote Server dan aktivasi ulang
+  selalu ditolak `already_activated` walau kode aktivasi baru sudah benar.
+  Sekarang hanya token yang dibuang; identitas device (`fingerprint_hash`,
+  `device_id`, dsb) tetap dipertahankan, sehingga aktivasi ulang dengan kode
+  baru dari admin akan berhasil secara normal.
+- Menaikkan `APP_VERSION` menjadi `1.51.0` (dikirim ke Remote Server saat
+  aktivasi dan laporan aktivitas).
+- Menambahkan test regresi (`test_token_decrypt_failure_only_clears_token_not_fingerprint`,
+  `test_corrupt_config_file_still_resets_cleanly`) untuk mengunci perilaku ini.
+- **Known issue (tidak diubah pada rilis ini)**: `test_manager_does_not_scan_and_only_reconnects_saved_endpoint`
+  di `test_wireless_adb_v149.py` kadang gagal saat seluruh test suite
+  dijalankan bersamaan (flaky, kemungkinan shared/global state antar test),
+  walau selalu lulus saat dijalankan sendiri. Berkas ini tidak disentuh pada
+  v1.51.0 dan berada di luar cakupan perbaikan aktivasi/token.
+
 ## v1.50.0
 
 - Memisahkan identitas HP (`stable_uid`) dari transport ADB USB/Wi-Fi.

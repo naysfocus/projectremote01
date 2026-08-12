@@ -73,7 +73,7 @@ if __name__ == "__main__":
     print("=" * 62)
     host = (os.environ.get("REMOTE_HP_BIND") or "127.0.0.1").strip() or "127.0.0.1"
     port = int(os.environ.get("REMOTE_HP_PORT") or "5001")
-    print(f"  Remote HP v1.50 berjalan di http://{host}:{port}")
+    print(f"  Remote HP v1.51 berjalan di http://{host}:{port}")
     print("  Aktivasi & sesi dikelola oleh https://remote.darda.uk")
     print("  (tekan Ctrl+C untuk berhenti)")
     print("=" * 62)
